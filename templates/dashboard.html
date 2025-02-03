@@ -11,11 +11,8 @@
 <body>
         <nav class="navbar navbar-light bg-light">
             <span class="navbar-text mr-3">Welcome, {{ username }}</span>
-        <input type="file" id="fileInput" multiple class="btn btn-primary ml-1" style="display: none;">
-        <label for="fileInput" class="btn btn-primary ml-1 upload-btn">
-            <i class="fas fa-upload"></i> Upload
-        </label>
-        <a href="{{ url_for('logout') }}" class="btn btn-danger float-right">Logout</a>
+            <button id="uploadButton" class="btn btn-primary ml-1 upload-btn"></button>
+            <a href="{{ url_for('logout') }}" class="btn btn-danger float-right">Logout</a>
         </nav>
         
     <table class="table table-bordered">
