@@ -90,13 +90,13 @@ def dashboard():
     username = User.query.filter_by(id=user_id).first().username
 
     if request.method == 'POST':
-        file = request.files['upload']
+        uploaded_files = request.files.getlist('file')
         
-        # Get the username from session and use it to create a unique user directory
-        filename = secure_filename(file.filename)
+        for file in uploaded_files:
+            filename = secure_filename(file.filename)
         user_folder = os.path.join(app.config['UPLOAD_FOLDER'], session['username'])
 
-        # Check if the user folder exists, if not create it
+            # Create the folder if it doesn't exist
         if not os.path.exists(user_folder):
             os.makedirs(user_folder)
             

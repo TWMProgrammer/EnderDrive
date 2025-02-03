@@ -3,17 +3,20 @@
 <head>
         <title>Dashboard</title>
         <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    </head>
-    <body>
+        <!-- Font Awesome for icons -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <link rel="stylesheet" href="/static/style.css">
+
+</head>
+<body>
         <nav class="navbar navbar-light bg-light">
             <span class="navbar-text mr-3">Welcome, {{ username }}</span>
-        <button class="btn btn-primary ml-1">
+        <input type="file" id="fileInput" multiple class="btn btn-primary ml-1" style="display: none;">
+        <label for="fileInput" class="btn btn-primary ml-1 upload-btn">
             <i class="fas fa-upload"></i> Upload
-        </button>
+        </label>
         <a href="{{ url_for('logout') }}" class="btn btn-danger float-right">Logout</a>
-    </nav>
+        </nav>
         
     <table class="table table-bordered">
         <thead>
