@@ -1,7 +1,7 @@
 # EnderDrive
 
 Just a very basic implementation of a google or HFS-like application written in python.
-It is designed to run on Linux.
+It is designed to run on Linux and Windows.
 
 Features:
 

@@ -140,17 +140,17 @@ def browse(path):
     # Sort items: folders first, then files, both alphabetically
     items.sort(key=lambda x: (x['is_file'], x['name'].lower()))
     
-    # Create breadcrumb navigation
+     # Create breadcrumb navigation
     breadcrumbs = []
     if path:
-        parts = path.split('/')
+        parts = path.split('/') if '/' in path else path.split('\\') # Changed this line to handle both '/' and '\' based paths
         current_path = ''
         for part in parts:
             current_path = os.path.join(current_path, part)
             breadcrumbs.append({
-                'name': part,
-                'path': current_path
-            })
+                 'name': part,
+                 'path': current_path
+             })
     
     # Explicitly check if user is admin
     is_admin = user.role_info.name == 'admin'
