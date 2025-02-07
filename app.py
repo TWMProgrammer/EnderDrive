@@ -385,6 +385,53 @@ def download_file(path):
     else:
         flash('File not found')
         return redirect(url_for('browse', path=os.path.dirname(path)))
+    
+def synchronize_database_with_filesystem():
+    # Get all users
+    users = User.query.all()
+    
+    for user in users:
+        # Construct the full path to the user's folder
+        user_folder = os.path.join(app.config['UPLOAD_FOLDER'], user.username)
+        
+        if not os.path.exists(user_folder):
+            continue  # User doesn't have a folder, skip them
+            
+        # Get all files and folders in the user's folder
+        for root, dirs, files in os.walk(user_folder):
+            relative_path = os.path.relpath(root, user_folder)  # Path relative to the user's folder
+            
+            if not File.query.filter_by(name=relative_path).first():  # If file does not exist in database
+                # Create a new file record
+                new_file = File(name=relative_path, owner_id=user.id)
+                db.session.add(new_file)
+                
+            for file in files:
+                if not File.query.filter_by(name=os.path.join(relative_path, file)).first():  # If file does not exist in database
+                    # Get the size of the file
+                    file_path = os.path.join(root, file)
+                    file_size = os.path.getsize(file_path)
+                    
+                    # Create a new file record
+                    new_file = File(name=os.path.join(relative_path, file), size=file_size, owner_id=user.id)
+                    db.session.add(new_file)
+        
+        # Get all files and folders in the database that do not exist on the filesystem
+        for file in File.query.filter_by(owner_id=user.id).all():
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, file.name)
+            
+            if not os.path.exists(file_path):  # If file does not exist on filesystem
+                # Delete the file record
+                File.query.filter_by(id=file.id).delete()
+        
+        for folder in Folder.query.filter_by(owner_id=user.id).all():
+            folder_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, folder.name)
+            
+            if not os.path.exists(folder_path):  # If folder does not exist on filesystem
+                # Delete the folder record
+                Folder.query.filter_by(id=folder.id).delete()
+                
+    db.session.commit()
 
 if __name__ == '__main__':
     with app.app_context():
@@ -435,5 +482,9 @@ if __name__ == '__main__':
         # Create uploads folder if it doesn't exist
         if not os.path.exists(app.config['UPLOAD_FOLDER']):
             os.makedirs(app.config['UPLOAD_FOLDER'])
+        
+        synchronize_database_with_filesystem()
+
+        
 
     app.run(debug=True)
