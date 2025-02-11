@@ -9,9 +9,9 @@ Features:
     -Login
     -File browsing in our own space
     -Upload files
+    -Admin user management fixing
 
 To-do:
 
-    -Admin user management fixing
     -Upload folders rework
     -Share files or folders functionality with random generated links

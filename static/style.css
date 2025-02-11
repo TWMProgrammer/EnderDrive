@@ -8,6 +8,10 @@
     margin-left: 10px;
 }
 
+.white-text {
+    color: white;
+}
+
 #fileUploadModal {
     position: fixed;
     bottom: 50%;
