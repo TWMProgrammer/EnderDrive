@@ -164,8 +164,7 @@
                         <div class="form-group d-none" id="folderUploadSection">
                             <label class="text-light">Select Folder:</label>
                             <div class="custom-file">
-                                <input type="file" class="custom-file-input" id="folder" name="folder[]" webkitdirectory
-                                    directory multiple>
+                                <input type="file" class="custom-file-input" id="folder" name="file" webkitdirectory directory multiple>
                                 <label class="custom-file-label" for="folder"
                                     style="background: #1a202c; color: white; border-color: #4a5568;">
                                     Choose folder
@@ -173,21 +172,40 @@
                             </div>
                         </div>
                     </div>
-                    <div id="uploadedFileNames" class="white-text"></div>
+                    <div id="uploadedFileNames" class="p-3 text-light"></div>
                     <script>
-                        document.getElementById('file').addEventListener('change', function () {
+                        function updateFileList(input) {
                             const uploadedFileNamesDiv = document.getElementById("uploadedFileNames");
-                            let fileList = this.files;  // Get list of selected files
+                            let fileList = input.files;
 
                             if (fileList.length === 0) {
-                                uploadedFileNamesDiv.innerHTML = '';   // Clear the display when no files are selected
+                                uploadedFileNamesDiv.innerHTML = '';
                             } else {
                                 let names = [];
-                                for (let i = 0; i < fileList.length; i++) {
-                                    names[i] = '<li>' + fileList[i].name + '</li>';  // Get name of each file and wrap it in a list item
+                                for (let i = 0; i < Math.min(fileList.length, 5); i++) {
+                                    names.push('<li>' + fileList[i].name + '</li>');
                                 }
-                                uploadedFileNamesDiv.innerHTML = 'Uploading: <ul>' + names.join('') + '</ul>';   // Display the names of all selected files inside an unordered list
+                                if (fileList.length > 5) {
+                                    names.push('<li>...and ' + (fileList.length - 5) + ' more files</li>');
+                                }
+                                uploadedFileNamesDiv.innerHTML = 'Selected: <ul class="mb-0">' + names.join('') + '</ul>';
                             }
+                        }
+
+                        document.getElementById('file').addEventListener('change', function() {
+                            updateFileList(this);
+                            const label = this.nextElementSibling;
+                            label.textContent = this.files.length > 1 ? 
+                                this.files.length + ' files selected' : 
+                                this.files[0].name;
+                        });
+
+                        document.getElementById('folder').addEventListener('change', function() {
+                            updateFileList(this);
+                            const label = this.nextElementSibling;
+                            label.textContent = this.files.length > 0 ? 
+                                'Folder with ' + this.files.length + ' files selected' : 
+                                'Choose folder';
                         });
                     </script>
                     <div class="modal-footer">

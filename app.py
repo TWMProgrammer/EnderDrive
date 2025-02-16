@@ -169,30 +169,52 @@ def upload(path):
     user_id = session['user_id']
     user = db.session.get(User, user_id)
     
-    # Handle file upload
+    # Handle file and folder uploads
     if 'file' in request.files:
         files = request.files.getlist('file')
         for file in files:
             if file.filename:
-                filename = secure_filename(file.filename)
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, path, filename)
+                # Get the relative path within the uploaded folder structure
+                relative_path = file.filename.replace('\\', '/')
                 
-                # Create directory if it doesn't exist
+                # Secure the entire path
+                secure_path = '/'.join(secure_filename(part) for part in relative_path.split('/'))
+                
+                # Construct the full path
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, path, secure_path)
+                
+                # Create all necessary parent directories
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 
+                # Save the file
                 file.save(file_path)
+                
+                # Create folder records for each directory in the path
+                current_path = ''
+                path_parts = os.path.dirname(secure_path).split('/')
+                for part in path_parts:
+                    if part:
+                        current_path = os.path.join(current_path, part) if current_path else part
+                        # Check if folder record exists
+                        if not Folder.query.filter_by(name=current_path, owner_id=user_id).first():
+                            new_folder = Folder(
+                                name=current_path,
+                                owner_id=user_id
+                            )
+                            db.session.add(new_folder)
                 
                 # Create file record in database
                 file_size = os.path.getsize(file_path)
                 new_file = File(
-                    name=filename,
+                    name=secure_path,
                     size=file_size,
                     owner_id=user_id
                 )
                 db.session.add(new_file)
-                db.session.commit()
+                
+        db.session.commit()
     
-    # Handle folder creation
+    # Handle single folder creation through form
     elif 'folder_name' in request.form:
         folder_name = request.form['folder_name']
         if folder_name:
