@@ -2,37 +2,41 @@
 <html lang="en">
 <head>
     <title>Admin Dashboard</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
-    <nav class="navbar navbar-light bg-light">
-        <span class="navbar-text mr-3">Admin Dashboard - {{ username }}</span>
-        <a href="{{ url_for('browse', path='') }}" class="btn btn-secondary ml-1">
-            <i class="fas fa-arrow-left"></i> Back to Files
-        </a>
-        <a href="{{ url_for('logout') }}" class="btn btn-danger ml-1">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
+<body class="bg-dark text-light">
+    <nav class="navbar navbar-dark bg-dark border-bottom border-secondary">
+        <div class="container-fluid">
+            <span class="navbar-text">Admin Dashboard - {{ username }}</span>
+            <div>
+                <a href="{{ url_for('browse', path='') }}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left"></i> Back to Files
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger ms-2">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
     </nav>
 
     <div class="container mt-4">
         <div class="row">
             <div class="col-md-6">
-                <div class="card mb-4">
+                <div class="card bg-dark border-secondary mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">System Overview</h5>
-                        <p>Total Storage Used: {{ total_storage }} bytes</p>
-                        <p>Active Users: {{ active_users }}</p>
+                        <h5 class="card-title text-light">System Overview</h5>
+                        <p class="text-light">Total Storage Used: {{ total_storage }} bytes</p>
+                        <p class="text-light">Active Users: {{ active_users }}</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card mb-4">
+                <div class="card bg-dark border-secondary mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Quick Actions</h5>
-                        <button class="btn btn-primary" data-toggle="modal" data-target="#addUserModal">
+                        <h5 class="card-title text-light">Quick Actions</h5>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
                             <i class="fas fa-user-plus"></i> Add New User
                         </button>
                     </div>
@@ -40,11 +44,11 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card bg-dark border-secondary">
             <div class="card-body">
-                <h5 class="card-title">User Management</h5>
+                <h5 class="card-title text-light">User Management</h5>
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-dark table-hover">
                         <thead>
                             <tr>
                                 <th>Username</th>
@@ -63,12 +67,12 @@
                                 <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                                 <td>
                                     <div class="btn-group">
-                                        <button class="btn btn-sm btn-info" onclick="editUser('{{ user.id }}', '{{ user.username }}', '{{ user.role_info.name }}')">
+                                        <button class="btn btn-sm btn-outline-info" onclick="editUser('{{ user.id }}', '{{ user.username }}', '{{ user.role_info.name }}')">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         {% if user.username != 'admin' %}
                                         <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" style="display: inline;">
-                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this user?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this user?')">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -87,31 +91,31 @@
     <!-- Add User Modal -->
     <div class="modal fade" id="addUserModal" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New User</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light">Add New User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form action="{{ url_for('add_user') }}" method="POST">
                     <div class="modal-body">
-                        <div class="form-group">
-                            <label for="new_username">Username</label>
-                            <input type="text" class="form-control" id="new_username" name="username" required>
+                        <div class="mb-3">
+                            <label for="new_username" class="form-label text-light">Username</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" id="new_username" name="username" required>
                         </div>
-                        <div class="form-group">
-                            <label for="new_password">Password</label>
-                            <input type="password" class="form-control" id="new_password" name="password" required>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label text-light">Password</label>
+                            <input type="password" class="form-control bg-dark text-light border-secondary" id="new_password" name="password" required>
                         </div>
-                        <div class="form-group">
-                            <label for="new_role">Role</label>
-                            <select class="form-control" id="new_role" name="role">
+                        <div class="mb-3">
+                            <label for="new_role" class="form-label text-light">Role</label>
+                            <select class="form-select bg-dark text-light border-secondary" id="new_role" name="role">
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">Add User</button>
                     </div>
                 </form>
@@ -122,32 +126,32 @@
     <!-- Edit User Modal -->
     <div class="modal fade" id="editUserModal" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit User</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-light">Edit User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="editUserForm" action="{{ url_for('edit_user') }}" method="POST">
                     <div class="modal-body">
                         <input type="hidden" id="edit_user_id" name="user_id">
-                        <div class="form-group">
-                            <label for="edit_username">Username</label>
-                            <input type="text" class="form-control" id="edit_username" name="username" required>
+                        <div class="mb-3">
+                            <label for="edit_username" class="form-label text-light">Username</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary" id="edit_username" name="username" required>
                         </div>
-                        <div class="form-group">
-                            <label for="edit_password">New Password (leave blank to keep current)</label>
-                            <input type="password" class="form-control" id="edit_password" name="password">
+                        <div class="mb-3">
+                            <label for="edit_password" class="form-label text-light">New Password (leave blank to keep current)</label>
+                            <input type="password" class="form-control bg-dark text-light border-secondary" id="edit_password" name="password">
                         </div>
-                        <div class="form-group">
-                            <label for="edit_role">Role</label>
-                            <select class="form-control" id="edit_role" name="role">
+                        <div class="mb-3">
+                            <label for="edit_role" class="form-label text-light">Role</label>
+                            <select class="form-select bg-dark text-light border-secondary" id="edit_role" name="role">
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                             </select>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">Save Changes</button>
                     </div>
                 </form>
@@ -156,15 +160,15 @@
     </div>
 
     <!-- Required JavaScript -->
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function editUser(userId, username, role) {
             document.getElementById('edit_user_id').value = userId;
             document.getElementById('edit_username').value = username;
             document.getElementById('edit_role').value = role;
             document.getElementById('edit_password').value = '';
-            $('#editUserModal').modal('show');
+            new bootstrap.Modal(document.getElementById('editUserModal')).show();
         }
     </script>
 </body>
