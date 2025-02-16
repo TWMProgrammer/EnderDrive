@@ -502,6 +502,10 @@ def init_app():
             louis_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'Louis')
             if not os.path.exists(louis_folder):
                 os.makedirs(louis_folder)
+        
+        # Apply filesystem changes to the database
+        synchronize_database_with_filesystem()
+    
 
 # Initialize the app when this module is imported
 init_app()
