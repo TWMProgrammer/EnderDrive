@@ -453,8 +453,12 @@ def synchronize_database_with_filesystem():
                 
     db.session.commit()
 
-if __name__ == '__main__':
+def init_app():
     with app.app_context():
+        # Create uploads folder if it doesn't exist
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+
         # Create all database tables if they don't exist already
         db.create_all()
         
@@ -499,12 +503,8 @@ if __name__ == '__main__':
             if not os.path.exists(louis_folder):
                 os.makedirs(louis_folder)
 
-        # Create uploads folder if it doesn't exist
-        if not os.path.exists(app.config['UPLOAD_FOLDER']):
-            os.makedirs(app.config['UPLOAD_FOLDER'])
-        
-        synchronize_database_with_filesystem()
+# Initialize the app when this module is imported
+init_app()
 
-        
-
+if __name__ == '__main__':
     app.run()

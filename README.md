@@ -14,3 +14,10 @@ Features:
 
 To-do:
     -Share files or folders functionality with random generated links
+
+For docker:
+    Image: twm420k/enderdrive
+    Inner port: 5000
+    Volumes:
+        - /app/instance
+        - /app/uploads
