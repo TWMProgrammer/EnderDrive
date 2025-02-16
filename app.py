@@ -53,7 +53,7 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('login'))
-        user = User.query.get(session['user_id'])
+        user = db.session.get(User, session['user_id'])
         if not user or user.role_info.name != 'admin':
             flash('Admin access required')
             return redirect(url_for('browse', path=''))
@@ -75,7 +75,6 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
-            # Always redirect to browse view, admin dashboard will be accessible via button
             return redirect(url_for('browse', path=''))
         flash('Invalid credentials', 'error')
         return redirect(url_for('login'))
@@ -89,7 +88,6 @@ def register():
             password=request.form['password'],
             method='pbkdf2'
         )
-        # Get the default user role
         user_role = Role.query.filter_by(name='user').first()
         new_user = User(username=username, password=password, role_id=user_role.id)
         db.session.add(new_user)
@@ -110,7 +108,7 @@ def browse(path):
         return redirect(url_for('login'))
         
     user_id = session['user_id']
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     
     # Construct the full path
     full_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, path)
@@ -169,7 +167,7 @@ def upload(path):
         return redirect(url_for('login'))
         
     user_id = session['user_id']
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     
     # Handle file upload
     if 'file' in request.files:
@@ -220,7 +218,7 @@ def delete_item(path):
         return redirect(url_for('login'))
         
     user_id = session['user_id']
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     
     # Construct the full path
     full_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, path)
@@ -273,7 +271,7 @@ def admin_dashboard():
                          user_storage=user_storage,
                          total_storage=total_storage,
                          active_users=active_users,
-                         username=User.query.get(session['user_id']).username)
+                         username=db.session.get(User, session['user_id']).username)
 
 @app.route('/admin/add_user', methods=['POST'])
 @admin_required
@@ -312,7 +310,7 @@ def edit_user():
     password = request.form['password']
     role_name = request.form['role']
     
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         flash('User not found')
         return redirect(url_for('admin_dashboard'))
@@ -340,7 +338,7 @@ def edit_user():
 @app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
 @admin_required
 def delete_user(user_id):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         flash('User not found')
         return redirect(url_for('admin_dashboard'))
@@ -377,7 +375,7 @@ def download_file(path):
         return redirect(url_for('login'))
         
     user_id = session['user_id']
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, path)
     if os.path.exists(file_path) and os.path.isfile(file_path):
