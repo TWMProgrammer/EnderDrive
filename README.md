@@ -24,3 +24,7 @@ For docker:
     Volumes:
         - /app/instance
         - /app/uploads
+
+Run:
+
+    docker run -d -p 5000:5000 -v enderdrive_instance:/app/instance -v enderdrive_uploads:/app/uploads twm420k/enderdrive
