@@ -11,12 +11,14 @@ Features:
     - Upload files
     - Admin user management
     - Upload folders functionality
+    - Share files or folders functionality with random generated links
 
 To-do:
-    - Share files or folders functionality with random generated links
+
     - General search utilising database for faster searching
 
 For docker:
+
     Image: twm420k/enderdrive
     Inner port: 5000
     Volumes:
