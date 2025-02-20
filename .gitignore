@@ -1,3 +1,7 @@
 instance/
 uploads/
 .venv/
+*.pyc
+*.pyo
+*.pyd
+*.db

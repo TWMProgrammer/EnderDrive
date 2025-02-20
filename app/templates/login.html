@@ -45,7 +45,7 @@
                 <h2 class="login-title">Welcome Back</h2>
                 <p class="login-subtitle">Please login to your account</p>
                 
-                <form action="{{ url_for('login') }}" method="POST">
+                <form action="{{ url_for('auth.login') }}" method="POST">
                     <div class="form-group">
                         <label for="username">Username</label>
                         <input type="text" id="username" name="username" class="form-control" required>
