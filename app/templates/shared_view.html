@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shared Item - EnderDrive</title>
+    <title>Shared Items - EnderDrive</title>
     <link href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/darkly/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -27,9 +27,16 @@
     <div class="container mt-4">
         <div class="card" style="background: #2d3748; border: none;">
             <div class="card-header" style="background: #1a202c; border-bottom: 1px solid #4a5568;">
-                <h4 class="text-light mb-0">Shared {{ item_type | title }}</h4>
+                <h4 class="text-light mb-0">
+                    {% if is_bulk_share %}
+                    Shared Items
+                    {% else %}
+                    Shared {{ item_type | title }}
+                    {% endif %}
+                </h4>
             </div>
             <div class="card-body">
+                {% if not is_bulk_share %}
                 <div class="row">
                     <div class="col-md-8">
                         <h5 class="text-light">{{ item.name }}</h5>
@@ -47,14 +54,15 @@
                     </div>
                     {% endif %}
                 </div>
+                {% endif %}
 
-                {% if item_type == 'folder' %}
+                {% if item_type == 'folder' or is_bulk_share %}
                 <!-- Breadcrumb navigation -->
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb" style="background: #1a202c;">
                         <li class="breadcrumb-item">
                             <a href="{{ url_for('sharing.view_shared', token=share.token) }}" class="text-primary">
-                                <i class="fas fa-home"></i>
+                                <i class="fas fa-home"></i> Root
                             </a>
                         </li>
                         {% for crumb in breadcrumbs %}
@@ -78,6 +86,15 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {% if current_folder %}
+                            <tr>
+                                <td colspan="4">
+                                    <a href="{{ url_for('sharing.view_shared', token=share.token, subpath=current_folder.rsplit('/', 1)[0] if '/' in current_folder else '') }}" class="text-primary">
+                                        <i class="fas fa-level-up-alt"></i> ..
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
                             {% for item in items %}
                             <tr>
                                 <td>
@@ -91,11 +108,11 @@
                                     </a>
                                     {% endif %}
                                 </td>
-                                <td>{{ item.size | filesizeformat }}</td>
+                                <td>{{ item.size | filesizeformat if item.is_file else '-' }}</td>
                                 <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                 <td>
                                     {% if item.is_file %}
-                                    <a href="{{ url_for('sharing.download_shared', token=share.token, path=item.full_path) }}" class="btn btn-sm btn-primary">
+                                    <a href="{{ url_for('sharing.download_shared', token=item.share_token, path=item.full_path) }}" class="btn btn-sm btn-primary">
                                         <i class="fas fa-download"></i>
                                     </a>
                                     {% endif %}

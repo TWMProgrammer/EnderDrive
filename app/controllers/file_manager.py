@@ -42,27 +42,35 @@ def browse(path):
         
         # Get database ID for file/folder
         db_item = None
+        relative_path = os.path.join(path, item) if path else item
         if is_file:
-            db_item = File.query.filter_by(name=os.path.join(path, item) if path else item, owner_id=user_id).first()
+            db_item = File.query.filter_by(name=relative_path, owner_id=user_id).first()
             if not db_item:
                 # Create file record if it doesn't exist
-                db_item = File(name=os.path.join(path, item) if path else item, size=item_size, owner_id=user_id)
+                db_item = File(name=relative_path, size=item_size, owner_id=user_id)
                 db.session.add(db_item)
+                db.session.commit()  # Commit to get the ID
         else:
-            db_item = Folder.query.filter_by(name=os.path.join(path, item) if path else item, owner_id=user_id).first()
+            db_item = Folder.query.filter_by(name=relative_path, owner_id=user_id).first()
             if not db_item:
                 # Create folder record if it doesn't exist
-                db_item = Folder(name=os.path.join(path, item) if path else item, owner_id=user_id)
+                db_item = Folder(name=relative_path, owner_id=user_id)
                 db.session.add(db_item)
+                db.session.commit()  # Commit to get the ID
         
         items.append({
             'name': item,
             'is_file': is_file,
             'size': item_size,
             'created_at': item_created,
-            'path': os.path.join(path, item) if path else item,
-            'id': db_item.id
+            'path': relative_path,
+            'id': db_item.id if db_item else None,
+            'folder_id': db_item.id if not is_file else None  # Add folder_id for folders
         })
+    
+    # Commit any pending changes
+    if db.session.dirty:
+        db.session.commit()
     
     items.sort(key=lambda x: (x['is_file'], x['name'].lower()))
     
