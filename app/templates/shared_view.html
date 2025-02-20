@@ -39,16 +39,34 @@
                             Expires: {{ share.expires_at.strftime('%Y-%m-%d %H:%M:%S') }}
                         </p>
                     </div>
+                    {% if item_type == 'file' %}
                     <div class="col-md-4 text-end">
-                        {% if item_type == 'file' %}
                         <a href="{{ url_for('sharing.download_shared', token=share.token) }}" class="btn btn-primary">
                             <i class="fas fa-download"></i> Download
                         </a>
-                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
 
                 {% if item_type == 'folder' %}
+                <!-- Breadcrumb navigation -->
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb" style="background: #1a202c;">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('sharing.view_shared', token=share.token) }}" class="text-primary">
+                                <i class="fas fa-home"></i>
+                            </a>
+                        </li>
+                        {% for crumb in breadcrumbs %}
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('sharing.view_shared', token=share.token, subpath=crumb.path) }}" class="text-primary">
+                                {{ crumb.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </nav>
+
                 <div class="table-responsive mt-4">
                     <table class="table table-dark">
                         <thead>
@@ -60,15 +78,27 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for file in item.files %}
+                            {% for item in items %}
                             <tr>
-                                <td>{{ file.name }}</td>
-                                <td>{{ file.size | filesizeformat }}</td>
-                                <td>{{ file.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                 <td>
-                                    <a href="{{ url_for('sharing.download_shared', token=share.token) }}" class="btn btn-sm btn-primary">
+                                    {% if item.is_file %}
+                                    <i class="fas fa-file text-muted mr-2"></i>
+                                    {{ item.name }}
+                                    {% else %}
+                                    <a href="{{ url_for('sharing.view_shared', token=share.token, subpath=item.full_path) }}" class="text-primary">
+                                        <i class="fas fa-folder text-primary mr-2"></i>
+                                        {{ item.name }}
+                                    </a>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.size | filesizeformat }}</td>
+                                <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    {% if item.is_file %}
+                                    <a href="{{ url_for('sharing.download_shared', token=share.token, path=item.full_path) }}" class="btn btn-sm btn-primary">
                                         <i class="fas fa-download"></i>
                                     </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}

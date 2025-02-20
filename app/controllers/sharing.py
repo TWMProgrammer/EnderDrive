@@ -86,7 +86,8 @@ def delete_share(token):
     return {'status': 'success'}
 
 @sharing.route('/shared/<token>')
-def view_shared(token):
+@sharing.route('/shared/<token>/<path:subpath>')
+def view_shared(token, subpath=''):
     share = SharedLink.query.filter_by(token=token).first()
     if not share or not share.is_valid:
         abort(404)
@@ -94,30 +95,127 @@ def view_shared(token):
     if share.file_id:
         item = share.file
         item_type = 'file'
+        items = []
+        current_folder = None
     else:
         item = share.folder
         item_type = 'folder'
+        
+        # Get the owner's username
+        owner = db.session.get(User, item.owner_id)
+        if not owner:
+            abort(404)
+            
+        # Get the base folder path using the owner's username
+        base_folder_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 
+                                      owner.username)
+        
+        # Add the folder's path from the database
+        folder_path = os.path.dirname(item.name) if '/' in item.name else item.name
+        base_folder_path = os.path.join(base_folder_path, folder_path)
+        
+        # Add subpath if provided
+        current_path = os.path.join(base_folder_path, subpath) if subpath else base_folder_path
+        
+        if not os.path.exists(current_path) or not current_path.startswith(os.path.join(current_app.config['UPLOAD_FOLDER'], owner.username)):
+            abort(404)
+            
+        items = []
+        current_folder = subpath if subpath else ''
+        
+        # List contents of current directory
+        for entry in os.scandir(current_path):
+            entry_path = os.path.relpath(entry.path, base_folder_path)
+            is_file = entry.is_file()
+            
+            if is_file:
+                file_record = File.query.filter_by(
+                    name=os.path.join(folder_path, entry_path) if folder_path else entry_path,
+                    owner_id=item.owner_id
+                ).first()
+                
+                if file_record:
+                    items.append({
+                        'name': os.path.basename(entry_path),
+                        'full_path': entry_path,
+                        'size': entry.stat().st_size,
+                        'created_at': datetime.fromtimestamp(entry.stat().st_ctime),
+                        'is_file': True
+                    })
+            else:
+                items.append({
+                    'name': os.path.basename(entry_path),
+                    'full_path': entry_path,
+                    'size': 0,
+                    'created_at': datetime.fromtimestamp(entry.stat().st_ctime),
+                    'is_file': False
+                })
+        
+        # Sort items - folders first, then files
+        items.sort(key=lambda x: (x['is_file'], x['name'].lower()))
     
-    if not item:
-        abort(404)
+    # Generate breadcrumbs
+    breadcrumbs = []
+    if current_folder:
+        parts = current_folder.split(os.sep)
+        current_path = ''
+        for part in parts:
+            if part:
+                current_path = os.path.join(current_path, part)
+                breadcrumbs.append({
+                    'name': part,
+                    'path': current_path
+                })
     
     return render_template(
         'shared_view.html',
         item=item,
         item_type=item_type,
+        items=items,
+        current_folder=current_folder,
+        breadcrumbs=breadcrumbs,
         share=share,
         username=db.session.get(User, session.get('user_id')).username if 'user_id' in session else None
     )
 
 @sharing.route('/shared/<token>/download')
-def download_shared(token):
+@sharing.route('/shared/<token>/download/<path:path>')
+def download_shared(token, path=''):
     share = SharedLink.query.filter_by(token=token).first()
-    if not share or not share.is_valid or not share.file_id:
+    if not share or not share.is_valid:
         abort(404)
     
-    file = share.file
-    if not file:
-        abort(404)
+    if share.file_id:
+        file = share.file
+        if not file:
+            abort(404)
+            
+        owner = db.session.get(User, file.owner_id)
+        if not owner:
+            abort(404)
+            
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], owner.username, file.name)
+    else:
+        folder = share.folder
+        if not folder:
+            abort(404)
+            
+        if not path:
+            abort(404)
+            
+        owner = db.session.get(User, folder.owner_id)
+        if not owner:
+            abort(404)
+            
+        folder_path = os.path.dirname(folder.name) if '/' in folder.name else folder.name
+        base_folder_path = os.path.join(current_app.config['UPLOAD_FOLDER'], owner.username, folder_path)
+        file_path = os.path.join(base_folder_path, path)
+        
+        # Security check - make sure the file is within the shared folder
+        if not os.path.exists(file_path) or not file_path.startswith(os.path.join(current_app.config['UPLOAD_FOLDER'], owner.username)):
+            abort(404)
     
-    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(file.owner_id), file.name)
+    if not os.path.exists(file_path):
+        abort(404)
+        
     return send_file(file_path, as_attachment=True) 
