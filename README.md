@@ -15,6 +15,8 @@ Features:
 
 To-do:
 
+    - Bulk download
+    - Back button fix in shared browsing
     - General search utilising database for faster searching
 
 For docker:
