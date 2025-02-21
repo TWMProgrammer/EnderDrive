@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, send_file, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, send_file, current_app, jsonify
 from werkzeug.utils import secure_filename
 from app import db
 from app.models.user import User
@@ -8,6 +8,9 @@ from app.models.file import File
 from app.models.folder import Folder
 from app.models.shared_link import SharedLink
 from sqlalchemy import func
+import zipfile
+import tempfile
+import json
 
 file_manager = Blueprint('file_manager', __name__)
 
@@ -333,4 +336,63 @@ def get_folders():
             'path': relative_root
         })
     
-    return {'status': 'success', 'folders': folders} 
+    return {'status': 'success', 'folders': folders}
+
+@file_manager.route('/bulk-download', methods=['POST'])
+def bulk_download():
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Not authenticated'}), 401
+        
+    user_id = session['user_id']
+    user = db.session.get(User, user_id)
+    
+    # Get the list of items to download
+    items = request.json.get('items', [])
+    if not items:
+        return jsonify({'status': 'error', 'message': 'No items selected'}), 400
+    
+    # Create a temporary zip file
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_file:
+        with zipfile.ZipFile(temp_file.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for item in items:
+                item_path = os.path.join(current_app.config['UPLOAD_FOLDER'], user.username, item['path'])
+                
+                if item['type'] == 'file':
+                    # Handle single file
+                    if os.path.exists(item_path) and os.path.isfile(item_path):
+                        # Add file to zip with its relative path
+                        zipf.write(item_path, item['path'])
+                else:
+                    # Handle folder and its contents
+                    if os.path.exists(item_path) and os.path.isdir(item_path):
+                        for root, dirs, files in os.walk(item_path):
+                            # Calculate the relative path within the user's directory
+                            rel_start = os.path.join(current_app.config['UPLOAD_FOLDER'], user.username)
+                            rel_path = os.path.relpath(root, rel_start)
+                            
+                            # Add all files in this directory to the zip
+                            for file in files:
+                                file_path = os.path.join(root, file)
+                                # The arcname will preserve the directory structure
+                                arc_name = os.path.join(rel_path, file)
+                                zipf.write(file_path, arc_name)
+                            
+                            # Add empty directories
+                            for dir in dirs:
+                                dir_path = os.path.join(root, dir)
+                                # Create an empty directory in the zip
+                                dir_rel_path = os.path.relpath(dir_path, rel_start)
+                                # Ensure the directory ends with a slash
+                                if not dir_rel_path.endswith('/'):
+                                    dir_rel_path += '/'
+                                zipinfo = zipfile.ZipInfo(dir_rel_path)
+                                zipf.writestr(zipinfo, '')
+                
+    # Return the path to the zip file
+    zip_filename = f'bulk_download_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
+    return send_file(
+        temp_file.name,
+        as_attachment=True,
+        download_name=zip_filename,
+        mimetype='application/zip'
+    ) 

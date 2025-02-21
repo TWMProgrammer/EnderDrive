@@ -12,10 +12,9 @@ Features:
     - Admin user management
     - Upload folders functionality
     - Share files or folders functionality with random generated links
-
+    - Bulk downloads
 To-do:
 
-    - Bulk download
     - Back button fix in shared browsing
     - General search utilising database for faster searching
 
