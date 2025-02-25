@@ -48,7 +48,7 @@
                         <th>Type</th>
                         <th>Size</th>
                         <th>Created</th>
-                        <th style="width: 100px;">Actions</th>
+                        <th style="width: 120px; min-width: 120px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -93,16 +93,16 @@
                         <td style="vertical-align: middle;">{{ 'File' if item.is_file else 'Folder' }}</td>
                         <td style="vertical-align: middle;">{{ item.size if item.is_file else '-' }}</td>
                         <td style="vertical-align: middle;">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                        <td style="vertical-align: middle; min-width: 100px;">
-                            <div class="btn-group">
+                        <td style="vertical-align: middle;">
+                            <div class="btn-group" style="width: 100%;">
                                 {% if item.is_file %}
                                 <a href="{{ url_for('file_manager.download_file', path=item.path) }}"
-                                    class="btn btn-sm landing-btn" title="Download">
+                                    class="btn btn-sm landing-btn" title="Download" style="border-radius: 13px;">
                                     <i class="fas fa-download"></i>
                                 </a>
                                 {% endif %}
                                 <button class="btn btn-sm landing-btn" type="button" 
-                                    data-toggle="dropdown">
+                                    data-toggle="dropdown" style="margin-left: 2px; border-radius: 13px;">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-right">
