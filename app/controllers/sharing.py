@@ -207,7 +207,20 @@ def delete_share(token):
     if not share or share.created_by != session['user_id']:
         abort(404)
     
-    db.session.delete(share)
+    # If this is a bulk share parent or has a bulk_share_id, delete all related shares
+    if share.is_bulk_parent or share.bulk_share_id:
+        bulk_id = share.bulk_share_id or share.token
+        related_shares = SharedLink.query.filter_by(bulk_share_id=bulk_id).all()
+        for related_share in related_shares:
+            db.session.delete(related_share)
+        
+        # If this is the bulk parent itself, delete it too
+        if share.is_bulk_parent:
+            db.session.delete(share)
+    else:
+        # Regular single share deletion
+        db.session.delete(share)
+    
     db.session.commit()
     
     return {'status': 'success'}
@@ -487,3 +500,50 @@ def download_shared(token, path=''):
         abort(404)
         
     return send_file(file_path, as_attachment=True)
+
+@sharing.route('/api/shares/<token>', methods=['GET'])
+@login_required
+def get_share(token):
+    share = SharedLink.query.filter_by(token=token).first()
+    if not share or share.created_by != session['user_id']:
+        return {'success': False, 'message': 'Share not found'}, 404
+    
+    return {
+        'success': True,
+        'token': share.token,
+        'name': share.name,
+        'description': share.description,
+        'expires_at': share.expires_at.isoformat()
+    }
+
+@sharing.route('/api/shares/<token>', methods=['PUT'])
+@login_required
+def update_share(token):
+    share = SharedLink.query.filter_by(token=token).first()
+    if not share or share.created_by != session['user_id']:
+        return {'success': False, 'message': 'Share not found'}, 404
+    
+    data = request.get_json()
+    
+    # Update fields
+    if 'name' in data:
+        share.name = data['name'].strip()
+    if 'description' in data:
+        description = data['description'].strip()
+        if len(description) > 500:
+            return {'success': False, 'message': 'Description must be less than 500 characters'}, 400
+        share.description = description
+    if 'expires_at' in data:
+        try:
+            share.expires_at = datetime.fromisoformat(data['expires_at'])
+        except ValueError:
+            return {'success': False, 'message': 'Invalid expiry date format'}, 400
+    if 'password' in data and data['password'].strip():
+        share.password = data['password'].strip()
+    
+    try:
+        db.session.commit()
+        return {'success': True}
+    except Exception as e:
+        db.session.rollback()
+        return {'success': False, 'message': str(e)}, 500

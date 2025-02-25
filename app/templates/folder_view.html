@@ -15,7 +15,6 @@
     {% include 'components/file_table.html' %}
     {% endblock %}
 
-    
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -330,44 +329,122 @@
             }
     
             function extendShare(token) {
-                currentShareToken = token;
+                extendShares([token]);
+            }
+
+            function extendShares(tokens) {
+                if (!Array.isArray(tokens)) {
+                    tokens = [tokens];
+                }
+                
+                // Store tokens for use in confirmation
+                $('#extendShareModal').data('tokens', tokens);
+                
+                // Update modal text for bulk operation if needed
+                const itemCount = tokens.length;
+                const modalTitle = itemCount > 1 
+                    ? `Extend ${itemCount} Shares` 
+                    : 'Extend Share';
+                $('#extendShareModal .modal-title').text(modalTitle);
+                
+                // Show the modal
                 $('#manageSharesModal').modal('hide');
                 $('#extendShareModal').modal('show');
             }
-    
+
             function confirmExtendShare() {
-                const days = $('#newExpiration').val();
+                const tokens = $('#extendShareModal').data('tokens');
+                const days = $('#extendDays').val();
                 
-                $.ajax({
-                    url: "{{ url_for('sharing.extend_share', token='') }}" + currentShareToken,
-                    method: 'POST',
-                    data: { expires_in: days },
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            location.reload();
+                if (!tokens || !days) {
+                    alert('Please select a valid extension period');
+                    return;
+                }
+
+                // Show loading state
+                const submitButton = $('#confirmExtendShare');
+                const originalText = submitButton.html();
+                submitButton.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+                const promises = tokens.map(token => 
+                    $.ajax({
+                        url: "{{ url_for('sharing.extend_share', token='') }}" + token,
+                        method: 'POST',
+                        data: { expires_in: days }
+                    })
+                );
+
+                Promise.all(promises)
+                    .then(responses => {
+                        const successCount = responses.filter(r => r.status === 'success').length;
+                        const failCount = responses.length - successCount;
+                        
+                        let message = '';
+                        if (successCount > 0) {
+                            message = `Successfully extended ${successCount} share${successCount > 1 ? 's' : ''}.`;
                         }
-                    },
-                    error: function() {
-                        alert('Error extending share');
-                    }
-                });
+                        if (failCount > 0) {
+                            message += `\n${failCount} share${failCount > 1 ? 's' : ''} failed to extend.`;
+                        }
+                        
+                        alert(message);
+                        $('#extendShareModal').modal('hide');
+                        location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error extending shares:', error);
+                        alert('An error occurred while extending the shares.');
+                    })
+                    .finally(() => {
+                        submitButton.prop('disabled', false).html(originalText);
+                    });
             }
-    
+
             function deleteShare(token) {
-                if (confirm('Are you sure you want to delete this share link?')) {
+                deleteShares([token]);
+            }
+
+            function deleteShares(tokens) {
+                if (!Array.isArray(tokens)) {
+                    tokens = [tokens];
+                }
+
+                const itemCount = tokens.length;
+                const confirmMessage = itemCount > 1 
+                    ? `Are you sure you want to delete these ${itemCount} shares?` 
+                    : 'Are you sure you want to delete this share?';
+
+                if (!confirm(confirmMessage)) {
+                    return;
+                }
+
+                const promises = tokens.map(token =>
                     $.ajax({
                         url: "{{ url_for('sharing.delete_share', token='') }}" + token,
-                        method: 'POST',
-                        success: function(response) {
-                            if (response.status === 'success') {
-                                location.reload();
-                            }
-                        },
-                        error: function() {
-                            alert('Error deleting share');
+                        method: 'POST'
+                    })
+                );
+
+                Promise.all(promises)
+                    .then(responses => {
+                        const successCount = responses.filter(r => r.status === 'success').length;
+                        const failCount = responses.length - successCount;
+                        
+                        let message = '';
+                        if (successCount > 0) {
+                            message = `Successfully deleted ${successCount} share${successCount > 1 ? 's' : ''}.`;
                         }
+                        if (failCount > 0) {
+                            message += `\n${failCount} share${failCount > 1 ? 's' : ''} failed to delete.`;
+                        }
+                        
+                        alert(message);
+                        location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error deleting shares:', error);
+                        alert('An error occurred while deleting the shares.');
                     });
-                }
             }
     
             $('#extendShareModal').on('hidden.bs.modal', function () {
