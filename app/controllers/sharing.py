@@ -231,6 +231,8 @@ def verify_share_password():
 @sharing.route('/shared/<token>', defaults={'subpath': ''})
 @sharing.route('/shared/<token>/<path:subpath>')
 def view_shared(token, subpath=''):
+    # URL decode and normalize path separators to forward slashes
+    subpath = subpath.replace('%5C', '/').replace('%5c', '/').replace('\\', '/')
     share = SharedLink.query.filter_by(token=token).first()
     if not share or not share.is_valid:
         abort(404)
@@ -251,7 +253,7 @@ def view_shared(token, subpath=''):
                 if file:
                     items.append({
                         'name': os.path.basename(file.name),
-                        'full_path': file.name,
+                        'full_path': file.name.replace('\\', '/'),
                         'size': file.size,
                         'created_at': file.created_at,
                         'is_file': True,
@@ -298,7 +300,7 @@ def view_shared(token, subpath=''):
                                 
                                 items.append({
                                     'name': entry.name,
-                                    'full_path': entry_path,
+                                    'full_path': entry_path.replace('\\', '/'),
                                     'size': entry.stat().st_size if is_file else 0,
                                     'created_at': datetime.fromtimestamp(entry.stat().st_ctime),
                                     'is_file': is_file,
@@ -309,7 +311,7 @@ def view_shared(token, subpath=''):
                         # Just add the folder itself
                         items.append({
                             'name': os.path.basename(folder.name),
-                            'full_path': folder.name,
+                            'full_path': folder.name.replace('\\', '/'),
                             'size': 0,
                             'created_at': folder.created_at,
                             'is_file': False,
@@ -320,11 +322,11 @@ def view_shared(token, subpath=''):
         # Generate breadcrumbs for subpath navigation
         breadcrumbs = []
         if subpath:
-            parts = subpath.split(os.sep)
+            parts = subpath.replace('\\', '/').split('/')
             current_path = ''
             for part in parts:
                 if part:
-                    current_path = os.path.join(current_path, part)
+                    current_path = (current_path + '/' + part) if current_path else part
                     breadcrumbs.append({
                         'name': part,
                         'path': current_path
@@ -337,7 +339,7 @@ def view_shared(token, subpath=''):
             'shared_view.html',
             items=items,
             item_type='virtual_folder',
-            current_folder=subpath if subpath else '',
+            current_folder=subpath.replace('\\', '/') if subpath else '',
             breadcrumbs=breadcrumbs,
             share=share,
             is_bulk_share=True,
@@ -374,7 +376,7 @@ def view_shared(token, subpath=''):
             abort(404)
             
         items = []
-        current_folder = subpath if subpath else ''
+        current_folder = subpath.replace('\\', '/') if subpath else ''
         
         # List contents of current directory
         for entry in os.scandir(current_path):
@@ -396,7 +398,7 @@ def view_shared(token, subpath=''):
             if is_file and db_item:
                 items.append({
                     'name': os.path.basename(entry_path),
-                    'full_path': entry_path,
+                    'full_path': entry_path.replace('\\', '/'),
                     'size': entry.stat().st_size,
                     'created_at': datetime.fromtimestamp(entry.stat().st_ctime),
                     'is_file': True,
@@ -405,7 +407,7 @@ def view_shared(token, subpath=''):
             elif not is_file:
                 items.append({
                     'name': os.path.basename(entry_path),
-                    'full_path': entry_path,
+                    'full_path': entry_path.replace('\\', '/'),
                     'size': 0,
                     'created_at': datetime.fromtimestamp(entry.stat().st_ctime),
                     'is_file': False,
@@ -418,11 +420,11 @@ def view_shared(token, subpath=''):
     # Generate breadcrumbs
     breadcrumbs = []
     if current_folder:
-        parts = current_folder.split(os.sep)
+        parts = current_folder.replace('\\', '/').split('/')
         current_path = ''
         for part in parts:
             if part:
-                current_path = os.path.join(current_path, part)
+                current_path = (current_path + '/' + part) if current_path else part
                 breadcrumbs.append({
                     'name': part,
                     'path': current_path
@@ -469,15 +471,19 @@ def download_shared(token, path=''):
         if not owner:
             abort(404)
             
+        # Normalize the base folder path and requested path
         folder_path = os.path.dirname(folder.name) if '/' in folder.name else folder.name
         base_folder_path = os.path.join(current_app.config['UPLOAD_FOLDER'], owner.username, folder_path)
-        file_path = os.path.join(base_folder_path, path)
+        requested_path = path.replace('\\', '/').lstrip('/')
+        file_path = os.path.join(base_folder_path, requested_path)
         
         # Security check - make sure the file is within the shared folder
-        if not os.path.exists(file_path) or not file_path.startswith(os.path.join(current_app.config['UPLOAD_FOLDER'], owner.username)):
+        real_base = os.path.realpath(base_folder_path)
+        real_file = os.path.realpath(file_path)
+        if not os.path.exists(real_file) or not real_file.startswith(real_base):
             abort(404)
     
     if not os.path.exists(file_path):
         abort(404)
         
-    return send_file(file_path, as_attachment=True) 
+    return send_file(file_path, as_attachment=True)

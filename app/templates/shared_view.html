@@ -53,8 +53,8 @@
             </div>
             <div class="card-body">
                 {% if not is_bulk_share %}
-                <div class="row">
-                    <div class="col-md-8">
+                <div class="card mb-4" style="background: #1a202c; border-color: #4a5568;">
+                    <div class="card-body">
                         <h5 class="text-light">{{ item.name }}</h5>
                         <p class="text-muted">
                             Shared by: {{ share.creator.username }}<br>
@@ -62,10 +62,9 @@
                             Expires: {{ share.expires_at.strftime('%Y-%m-%d %H:%M:%S') }}
                         </p>
                         {% if share.description %}
-                        <div class="card mt-3" style="background: #1a202c; border-color: #4a5568;">
-                            <div class="card-body">
-                                <p class="text-light">{{ share.description }}</p>
-                            </div>
+                        <div class="mt-3">
+                            <h6 class="text-light">Description:</h6>
+                            <p class="text-light">{{ share.description }}</p>
                         </div>
                         {% endif %}
                     </div>
@@ -76,6 +75,24 @@
                         </a>
                     </div>
                     {% endif %}
+                </div>
+                {% endif %}
+
+                {% if is_bulk_share %}
+                <div class="card mb-4" style="background: #1a202c; border-color: #4a5568;">
+                    <div class="card-body">
+                        <p class="text-muted mb-0">
+                            Shared by: {{ share.creator.username }}<br>
+                            Created: {{ share.created_at.strftime('%Y-%m-%d %H:%M:%S') }}<br>
+                            Expires: {{ share.expires_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                        </p>
+                        {% if share.description %}
+                        <div class="mt-3">
+                            <h6 class="text-light">Description:</h6>
+                            <p class="text-light">{{ share.description }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
                 {% endif %}
 
@@ -112,8 +129,8 @@
                             {% if current_folder %}
                             <tr>
                                 <td colspan="4">
-                                    <a href="{{ url_for('sharing.view_shared', token=share.token, subpath=current_folder.rsplit('/', 1)[0] if '/' in current_folder else '') }}" class="text-primary">
-                                        <i class="fas fa-level-up-alt"></i> ..
+                                    <a href="{{ url_for('sharing.view_shared', token=share.token, subpath='/'.join(current_folder.replace('\\', '/').split('/')[:-1]) if current_folder else '') }}" class="text-primary">
+                                        <i class="fas fa-level-up-alt"></i> ...
                                     </a>
                                 </td>
                             </tr>
@@ -125,7 +142,7 @@
                                     <i class="fas fa-file text-muted mr-2"></i>
                                     {{ item.name }}
                                     {% else %}
-                                    <a href="{{ url_for('sharing.view_shared', token=share.token, subpath=item.full_path) }}" class="text-primary">
+                                    <a href="{{ url_for('sharing.view_shared', token=share.token, subpath=item.full_path.replace('\\', '/')) }}" class="text-primary">
                                         <i class="fas fa-folder text-primary mr-2"></i>
                                         {{ item.name }}
                                     </a>
@@ -135,7 +152,7 @@
                                 <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                 <td>
                                     {% if item.is_file %}
-                                    <a href="{{ url_for('sharing.download_shared', token=item.share_token, path=item.full_path) }}" class="btn btn-sm btn-primary">
+                                    <a href="{{ url_for('sharing.download_shared', token=share.token, path=item.full_path) }}" class="btn btn-sm btn-primary">
                                         <i class="fas fa-download"></i>
                                     </a>
                                     {% endif %}
