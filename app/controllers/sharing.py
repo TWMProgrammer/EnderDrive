@@ -22,6 +22,17 @@ def share_file(file_id):
     if not file or file.owner_id != session['user_id']:
         return {'status': 'error', 'message': 'File not found'}, 404
     
+    # Get new share fields
+    share_name = request.form.get('name', '').strip()
+    description = request.form.get('description', '').strip()
+    password = request.form.get('password', '').strip()
+    
+    if not share_name:
+        return {'status': 'error', 'message': 'Share name is required'}, 400
+    
+    if len(description) > 500:
+        return {'status': 'error', 'message': 'Description must be less than 500 characters'}, 400
+    
     # Create new share link
     expires_in_days = request.form.get('expires_in', 7, type=int)
     expires_at = datetime.now() + timedelta(days=expires_in_days)
@@ -35,14 +46,20 @@ def share_file(file_id):
             created_by=session['user_id'],
             expires_at=expires_at,
             bulk_share_id=bulk_share_id,
-            is_bulk_parent=False
+            is_bulk_parent=False,
+            name=share_name,
+            description=description,
+            password=password
         )
     else:
         # This is a standalone share
         share_link = SharedLink(
             file_id=file_id,
             created_by=session['user_id'],
-            expires_at=expires_at
+            expires_at=expires_at,
+            name=share_name,
+            description=description,
+            password=password
         )
     
     try:
@@ -72,6 +89,17 @@ def share_folder(folder_id):
     if not folder or folder.owner_id != session['user_id']:
         return {'status': 'error', 'message': 'Folder not found'}, 404
     
+    # Get new share fields
+    share_name = request.form.get('name', '').strip()
+    description = request.form.get('description', '').strip()
+    password = request.form.get('password', '').strip()
+    
+    if not share_name:
+        return {'status': 'error', 'message': 'Share name is required'}, 400
+    
+    if len(description) > 500:
+        return {'status': 'error', 'message': 'Description must be less than 500 characters'}, 400
+    
     # Create new share link
     expires_in_days = request.form.get('expires_in', 7, type=int)
     expires_at = datetime.now() + timedelta(days=expires_in_days)
@@ -85,14 +113,20 @@ def share_folder(folder_id):
             created_by=session['user_id'],
             expires_at=expires_at,
             bulk_share_id=bulk_share_id,
-            is_bulk_parent=False
+            is_bulk_parent=False,
+            name=share_name,
+            description=description,
+            password=password
         )
     else:
         # This is a standalone share
         share_link = SharedLink(
             folder_id=folder_id,
             created_by=session['user_id'],
-            expires_at=expires_at
+            expires_at=expires_at,
+            name=share_name,
+            description=description,
+            password=password
         )
     
     try:
@@ -118,13 +152,29 @@ def create_bulk_share():
     expires_at = datetime.now() + timedelta(days=expires_in_days)
     bulk_share_id = SharedLink.generate_bulk_share_id()
     
+    # Get share details from form
+    share_name = request.form.get('name', '').strip()
+    description = request.form.get('description', '').strip()
+    password = request.form.get('password', '').strip()
+    
+    
+    if not share_name:
+        temp = "Shared Items"
+    else:
+        temp = share_name
+    
+    if len(description) > 500:
+        return {'status': 'error', 'message': 'Description must be less than 500 characters'}, 400
+    
     # Create the parent share that represents the virtual folder
     parent_share = SharedLink(
         created_by=session['user_id'],
         expires_at=expires_at,
         bulk_share_id=bulk_share_id,
         is_bulk_parent=True,
-        name='Shared Items'  # Add a name for the virtual folder
+        name=temp,
+        description=description,
+        password=password
     )
     
     db.session.add(parent_share)
@@ -162,12 +212,35 @@ def delete_share(token):
     
     return {'status': 'success'}
 
-@sharing.route('/shared/<token>')
+@sharing.route('/share/verify-password', methods=['POST'])
+def verify_share_password():
+    token = request.form.get('token')
+    password = request.form.get('password')
+    
+    share = SharedLink.query.filter_by(token=token).first()
+    if not share or not share.is_valid:
+        abort(404)
+    
+    if share.password and share.password != password:
+        return {'status': 'error', 'message': 'Incorrect password'}
+    
+    # Store verification in session
+    session[f'share_verified_{token}'] = True
+    return {'status': 'success'}
+
+@sharing.route('/shared/<token>', defaults={'subpath': ''})
 @sharing.route('/shared/<token>/<path:subpath>')
 def view_shared(token, subpath=''):
     share = SharedLink.query.filter_by(token=token).first()
     if not share or not share.is_valid:
         abort(404)
+        
+    if share.password and not session.get(f'share_verified_{token}'):
+        # Instead of redirecting to password prompt page, render the view with a flag
+        return render_template('shared_view.html', 
+                             share=share,
+                             needs_password=True,
+                             token=token)
     
     # Handle bulk share virtual folder
     if share.is_bulk_parent:

@@ -25,6 +25,19 @@
     </nav>
 
     <div class="container mt-4">
+        {% if needs_password %}
+        <div class="card" style="background: #2d3748; border: none;">
+            <div class="card-header" style="background: #1a202c; border-bottom: 1px solid #4a5568;">
+                <h4 class="text-light mb-0">Password Protected Share</h4>
+                {% if share.name %}
+                <h5 class="text-light mt-2">{{ share.name }}</h5>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <p class="text-light">This share is password protected. Please enter the password to view its contents.</p>
+            </div>
+        </div>
+        {% else %}
         <div class="card" style="background: #2d3748; border: none;">
             <div class="card-header" style="background: #1a202c; border-bottom: 1px solid #4a5568;">
                 <h4 class="text-light mb-0">
@@ -34,6 +47,9 @@
                     Shared {{ item_type | title }}
                     {% endif %}
                 </h4>
+                {% if share.name %}
+                <h5 class="text-light mt-2">{{ share.name }}</h5>
+                {% endif %}
             </div>
             <div class="card-body">
                 {% if not is_bulk_share %}
@@ -45,6 +61,13 @@
                             Created: {{ share.created_at.strftime('%Y-%m-%d %H:%M:%S') }}<br>
                             Expires: {{ share.expires_at.strftime('%Y-%m-%d %H:%M:%S') }}
                         </p>
+                        {% if share.description %}
+                        <div class="card mt-3" style="background: #1a202c; border-color: #4a5568;">
+                            <div class="card-body">
+                                <p class="text-light">{{ share.description }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                     {% if item_type == 'file' %}
                     <div class="col-md-4 text-end">
@@ -125,9 +148,44 @@
                 {% endif %}
             </div>
         </div>
+        {% endif %}
     </div>
 
+    {% include 'components/modals/password_prompt_modal.html' %}
+
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function verifySharePassword() {
+            const password = $('#sharePasswordInput').val();
+            const token = '{{ token }}';
+            
+            $.ajax({
+                url: '/share/verify-password',
+                method: 'POST',
+                data: {
+                    token: token,
+                    password: password
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $('#passwordPromptModal').modal('hide');
+                        location.reload(); // Reload to show the actual content
+                    } else {
+                        alert('Incorrect password');
+                    }
+                }
+            });
+        }
+        
+        $(document).ready(function() {
+            {% if needs_password %}
+            $('#passwordPromptModal').modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+            {% endif %}
+        });
+    </script>
 </body>
-</html> 
+</html>

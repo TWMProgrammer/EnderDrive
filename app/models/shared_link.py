@@ -14,6 +14,8 @@ class SharedLink(db.Model):
     bulk_share_id = db.Column(db.String(64), nullable=True)  # Used to group bulk shares together
     is_bulk_parent = db.Column(db.Boolean, default=False)  # Indicates if this is the main share for a bulk share
     name = db.Column(db.String(255), nullable=True)  # Name for virtual folders in bulk shares
+    description = db.Column(db.String(500), nullable=True)
+    password = db.Column(db.String(128), nullable=True)
     
     # Relationships
     file = db.relationship('File', backref='shared_links', lazy=True)

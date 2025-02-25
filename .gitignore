@@ -2,6 +2,7 @@ __pycache__/
 instance/
 uploads/
 .venv/
+.vscode/
 *.pyc
 *.pyo
 *.pyd

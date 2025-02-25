@@ -72,6 +72,7 @@
                     return;
                 }
                 
+                // Set currentItems as an array with a single item
                 currentItems = [{
                     id: id,
                     path: path,
@@ -83,6 +84,13 @@
                 
                 // Update modal title
                 $('#shareModal .modal-title').text(`Share ${isFile ? 'File' : 'Folder'}`);
+                
+                // Set default share name based on the item's path
+                const itemName = path.split('/').pop();
+                $('#shareName').val(itemName);
+                $('#shareDescription').val('');
+                $('#sharePassword').val('');
+                $('#expiresIn').val('7');
                 
                 // Hide any previously shown share links
                 $('#shareLinkContainer').hide();
@@ -125,7 +133,21 @@
             }
     
             function generateShareLink() {
+                const shareName = $('#shareName').val().trim();
+                const description = $('#shareDescription').val().trim();
+                const password = $('#sharePassword').val();
                 const expiresIn = $('#expiresIn').val();
+                
+                if (!shareName) {
+                    alert('Please enter a name for your share');
+                    return;
+                }
+                
+                if (description.length > 500) {
+                    alert('Description must be less than 500 characters');
+                    return;
+                }
+                
                 const shareLinksContainer = $('#shareLinksContainer');
                 
                 // Clear previous links
@@ -153,7 +175,12 @@
                     ? $.ajax({
                         url: "{{ url_for('sharing.create_bulk_share') }}",
                         method: 'POST',
-                        data: { expires_in: expiresIn }
+                        data: { 
+                            expires_in: expiresIn,
+                            name: shareName,
+                            description: description,
+                            password: password
+                        }
                     })
                     : Promise.resolve({ status: 'success', bulk_share_id: null });
     
@@ -203,13 +230,16 @@
                             }
                             
                             let shareUrl = item.type === 'file' 
-                                ? "{{ url_for('sharing.share_file', file_id=0) }}".replace('0', item.id)
-                                : "{{ url_for('sharing.share_folder', folder_id=0) }}".replace('0', item.id);
+                                ? "{{ url_for('sharing.share_file', file_id=0) }}" + items[index].id
+                                : "{{ url_for('sharing.share_folder', folder_id=0) }}" + items[index].id;
                             
                             $.ajax({
                                 url: shareUrl,
                                 method: 'POST',
-                                data: { 
+                                data: {
+                                    name: shareName,
+                                    description: description,
+                                    password: password,
                                     expires_in: expiresIn,
                                     bulk_share_id: bulkShareId
                                 },
@@ -586,6 +616,18 @@
                 });
                 
                 $('#moveModal').modal('hide');
+            }
+    
+            function togglePasswordVisibility(inputId) {
+                const input = document.getElementById(inputId);
+                const icon = input.parentElement.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
             }
         </script>
 </body>
