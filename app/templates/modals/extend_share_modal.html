@@ -23,33 +23,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    function extendShare(token) {
-        currentShareToken = token;
-        $('#manageSharesModal').modal('hide');
-        $('#extendShareModal').modal('show');
-    }
-
-    function confirmExtendShare() {
-        const days = $('#newExpiration').val();
-        
-        $.ajax({
-            url: "{{ url_for('sharing.extend_share', token='') }}" + currentShareToken,
-            method: 'POST',
-            data: { expires_in: days },
-            success: function(response) {
-                if (response.status === 'success') {
-                    location.reload();
-                }
-            },
-            error: function() {
-                alert('Error extending share');
-            }
-        });
-    }
-
-    $('#extendShareModal').on('hidden.bs.modal', function () {
-        $('#manageSharesModal').modal('show');
-    });
-</script>

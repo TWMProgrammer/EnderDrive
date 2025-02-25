@@ -19,5 +19,574 @@
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+            document.getElementById('fileSearch').addEventListener('keyup', function () {
+                const searchInput = this.value.toLowerCase();
+                const tableRows = document.querySelectorAll('table tbody tr');
+    
+                tableRows.forEach(row => {
+                    const name = row.cells[1].textContent.toLowerCase();
+                    const type = row.cells[2].textContent.toLowerCase();
+    
+                    if (name.includes(searchInput) || type.includes(searchInput)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+    
+            function deleteItem(path, isFile) {
+                if (confirm('Are you sure you want to delete this ' + (isFile ? 'file' : 'folder') + '?')) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `${deleteItemUrl}${path}`;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
+    
+            const deleteItemUrl = "{{ url_for('file_manager.delete_item', path='') }}";
+    
+            document.querySelectorAll('input[name="uploadType"]').forEach(radio => {
+                radio.addEventListener('change', function () {
+                    const fileSection = document.getElementById('fileUploadSection');
+                    const folderSection = document.getElementById('folderUploadSection');
+    
+                    if (this.value === 'files') {
+                        fileSection.classList.remove('d-none');
+                        folderSection.classList.add('d-none');
+                    } else {
+                        fileSection.classList.add('d-none');
+                        folderSection.classList.remove('d-none');
+                    }
+                });
+            });
+    
+            let currentItemPath = '';
+            let currentItemType = '';
+    
+            function shareItem(id, path, isFile) {
+                if (!id || id === 'null' || id === 'undefined' || id === 'None') {
+                    alert('Invalid item ID. Please try refreshing the page.');
+                    return;
+                }
+                
+                currentItems = [{
+                    id: id,
+                    path: path,
+                    type: isFile ? 'file' : 'folder'
+                }];
+                
+                // Show share modal with selected items
+                $('#shareModal').modal('show');
+                
+                // Update modal title
+                $('#shareModal .modal-title').text(`Share ${isFile ? 'File' : 'Folder'}`);
+                
+                // Hide any previously shown share links
+                $('#shareLinkContainer').hide();
+                $('#shareLinksContainer').remove();
+                
+                // Add container for share links
+                const shareLinksContainer = $('<div id="shareLinksContainer" class="mt-3" style="display: none;"></div>');
+                $('#shareLinkContainer').after(shareLinksContainer);
+            }
+    
+            function getSelectedItems() {
+                const selectedItems = document.querySelectorAll('.item-checkbox:checked');
+                const items = Array.from(selectedItems).map(checkbox => {
+                    const id = checkbox.getAttribute('data-id');
+                    const path = checkbox.getAttribute('data-path');
+                    const type = checkbox.getAttribute('data-type');
+                    
+                    // Log the item details for debugging
+                    console.log('Selected item:', { id, path, type });
+                    
+                    if (!path) {
+                        console.warn('Item missing path:', { id, type });
+                        return null;
+                    }
+                    
+                    if (!id || id === 'null' || id === 'undefined' || id === 'None') {
+                        console.warn('Invalid ID for item:', { id, path, type });
+                        return null;
+                    }
+                    
+                    return {
+                        id: id,
+                        path: path,
+                        type: type
+                    };
+                }).filter(item => item !== null); // Remove any invalid items
+                
+                console.log('All selected items:', items); // Debug log
+                return items;
+            }
+    
+            function generateShareLink() {
+                const expiresIn = $('#expiresIn').val();
+                const shareLinksContainer = $('#shareLinksContainer');
+                
+                // Clear previous links
+                shareLinksContainer.empty();
+                shareLinksContainer.append('<label class="text-light">Share Link:</label>');
+                
+                // Create a list to hold the links
+                const linksList = $('<div class="list-group" style="background: #1a202c; border-color: #4a5568;"></div>');
+                shareLinksContainer.append(linksList);
+                
+                // Show loading state
+                shareLinksContainer.show();
+                linksList.append('<div class="text-light p-2">Generating share link...</div>');
+    
+                // Get selected items
+                const items = currentItems || getSelectedItems();
+                if (items.length === 0) {
+                    linksList.empty();
+                    linksList.append('<div class="text-danger p-2">No valid items selected</div>');
+                    return;
+                }
+                
+                // First create the bulk share (virtual folder) if multiple items
+                const createShare = items.length > 1 
+                    ? $.ajax({
+                        url: "{{ url_for('sharing.create_bulk_share') }}",
+                        method: 'POST',
+                        data: { expires_in: expiresIn }
+                    })
+                    : Promise.resolve({ status: 'success', bulk_share_id: null });
+    
+                createShare.then(function(response) {
+                    if (response.status === 'success') {
+                        const bulkShareId = response.bulk_share_id;
+                        let processedCount = 0;
+                        const totalItems = items.length;
+                        
+                        const processNextItem = (index) => {
+                            if (index >= totalItems) {
+                                if (bulkShareId) {
+                                    // Show the main share link for bulk share
+                                    linksList.empty();
+                                    linksList.append(`
+                                        <div class="list-group-item" style="background: #2d3748; border-color: #4a5568;">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="fas fa-folder mr-2"></i>
+                                                    Shared Folder (${totalItems} items)
+                                                </div>
+                                                <div class="input-group" style="max-width: 350px;">
+                                                    <input type="text" class="form-control form-control-sm" 
+                                                        value="${response.share_link}" 
+                                                        readonly
+                                                        style="background: #1a202c; color: white; border-color: #4a5568;">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-sm btn-primary" 
+                                                            onclick="copyShareLink(this)"
+                                                            data-link="${response.share_link}">
+                                                            <i class="fas fa-copy"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `);
+                                }
+                                return;
+                            }
+                            
+                            const item = items[index];
+                            if (!item.id || item.id === 'null' || item.id === 'undefined' || item.id === 'None') {
+                                console.error('Invalid item ID:', item);
+                                processNextItem(index + 1);
+                                return;
+                            }
+                            
+                            let shareUrl = item.type === 'file' 
+                                ? "{{ url_for('sharing.share_file', file_id=0) }}".replace('0', item.id)
+                                : "{{ url_for('sharing.share_folder', folder_id=0) }}".replace('0', item.id);
+                            
+                            $.ajax({
+                                url: shareUrl,
+                                method: 'POST',
+                                data: { 
+                                    expires_in: expiresIn,
+                                    bulk_share_id: bulkShareId
+                                },
+                                success: function(response) {
+                                    if (response.status === 'error') {
+                                        console.error('Error sharing item:', response.message);
+                                        linksList.append(`
+                                            <div class="text-danger p-2">
+                                                Error sharing ${item.type}: ${response.message}
+                                            </div>
+                                        `);
+                                    } else {
+                                        processedCount++;
+                                        if (!bulkShareId) {
+                                            // Show individual share link
+                                            linksList.empty();
+                                            linksList.append(`
+                                                <div class="list-group-item" style="background: #2d3748; border-color: #4a5568;">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <i class="fas fa-${item.type === 'file' ? 'file' : 'folder'} mr-2"></i>
+                                                            ${item.path.split('/').pop()}
+                                                        </div>
+                                                        <div class="input-group" style="max-width: 350px;">
+                                                            <input type="text" class="form-control form-control-sm" 
+                                                                value="${response.share_link}" 
+                                                                readonly
+                                                                style="background: #1a202c; color: white; border-color: #4a5568;">
+                                                            <div class="input-group-append">
+                                                                <button class="btn btn-sm btn-primary" 
+                                                                    onclick="copyShareLink(this)"
+                                                                    data-link="${response.share_link}">
+                                                                    <i class="fas fa-copy"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `);
+                                        } else {
+                                            linksList.empty();
+                                            linksList.append(`
+                                                <div class="text-light p-2">
+                                                    Processing items... (${processedCount}/${totalItems})
+                                                </div>
+                                            `);
+                                        }
+                                    }
+                                    processNextItem(index + 1);
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('Error sharing item:', item, error);
+                                    let errorMessage = 'Unknown error occurred';
+                                    try {
+                                        const response = JSON.parse(xhr.responseText);
+                                        errorMessage = response.message || errorMessage;
+                                    } catch (e) {
+                                        // Use default error message
+                                    }
+                                    linksList.append(`
+                                        <div class="text-danger p-2">
+                                            Error sharing ${item.type}: ${errorMessage}
+                                        </div>
+                                    `);
+                                    processNextItem(index + 1);
+                                }
+                            });
+                        };
+                        
+                        // Start processing items
+                        processNextItem(0);
+                    } else {
+                        linksList.empty();
+                        linksList.append('<div class="text-danger p-2">Error creating share</div>');
+                    }
+                }).catch(function(error) {
+                    console.error('Error creating bulk share:', error);
+                    linksList.empty();
+                    linksList.append('<div class="text-danger p-2">Error creating share</div>');
+                });
+            }
+    
+            function copyShareLink(button) {
+                const link = button.getAttribute('data-link');
+                navigator.clipboard.writeText(link).then(() => {
+                    alert('Link copied to clipboard!');
+                });
+            }
+    
+            function extendShare(token) {
+                currentShareToken = token;
+                $('#manageSharesModal').modal('hide');
+                $('#extendShareModal').modal('show');
+            }
+    
+            function confirmExtendShare() {
+                const days = $('#newExpiration').val();
+                
+                $.ajax({
+                    url: "{{ url_for('sharing.extend_share', token='') }}" + currentShareToken,
+                    method: 'POST',
+                    data: { expires_in: days },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            location.reload();
+                        }
+                    },
+                    error: function() {
+                        alert('Error extending share');
+                    }
+                });
+            }
+    
+            function deleteShare(token) {
+                if (confirm('Are you sure you want to delete this share link?')) {
+                    $.ajax({
+                        url: "{{ url_for('sharing.delete_share', token='') }}" + token,
+                        method: 'POST',
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                location.reload();
+                            }
+                        },
+                        error: function() {
+                            alert('Error deleting share');
+                        }
+                    });
+                }
+            }
+    
+            $('#extendShareModal').on('hidden.bs.modal', function () {
+                $('#manageSharesModal').modal('show');
+            });
+    
+            // Bulk operations related functions
+            document.getElementById('selectAll').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.item-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateBulkOperationsToolbar();
+            });
+    
+            document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', updateBulkOperationsToolbar);
+            });
+    
+            function updateBulkOperationsToolbar() {
+                const selectedItems = document.querySelectorAll('.item-checkbox:checked');
+                const toolbar = document.getElementById('bulkOperationsToolbar');
+                const selectedCount = document.getElementById('selectedCount');
+                
+                if (selectedItems.length > 0) {
+                    toolbar.style.display = 'block';
+                    selectedCount.textContent = selectedItems.length;
+                } else {
+                    toolbar.style.display = 'none';
+                }
+            }
+    
+            function bulkDownload() {
+                const items = getSelectedItems();
+                
+                if (items.length === 0) {
+                    alert('Please select at least one item to download');
+                    return;
+                }
+    
+                // Show loading modal
+                $('#loadingModal').modal('show');
+    
+                // Send request to create zip file
+                fetch("{{ url_for('file_manager.bulk_download') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ items: items })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Create a temporary link to download the file
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `bulk_download_${new Date().toISOString().slice(0,19).replace(/[-:]/g, '')}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error preparing download. Please try again.');
+                })
+                .finally(() => {
+                    // Hide loading modal
+                    $('#loadingModal').modal('hide');
+                });
+            }
+    
+            function bulkCopy() {
+                const items = getSelectedItems();
+                if (items.length === 0) return;
+                
+                // Show copy modal with selected items
+                $('#copyModal').modal('show');
+                currentItems = items;
+            }
+    
+            function bulkMove() {
+                const items = getSelectedItems();
+                if (items.length === 0) return;
+                
+                // Show move modal with selected items
+                $('#moveModal').modal('show');
+                currentItems = items;
+            }
+    
+            function bulkShare() {
+                const items = getSelectedItems();
+                if (items.length === 0) {
+                    alert('Please select at least one item to share');
+                    return;
+                }
+                
+                // Show share modal with selected items
+                $('#shareModal').modal('show');
+                currentItems = items;
+                
+                // Update modal title to reflect bulk operation
+                $('#shareModal .modal-title').text(`Share ${items.length} Items`);
+                
+                // Hide any previously shown share links
+                $('#shareLinkContainer').hide();
+                $('#shareLinksContainer').remove();
+                
+                // Add container for multiple share links
+                const shareLinksContainer = $('<div id="shareLinksContainer" class="mt-3" style="display: none;"></div>');
+                $('#shareLinkContainer').after(shareLinksContainer);
+            }
+    
+            function bulkDelete() {
+                const items = getSelectedItems();
+                if (items.length === 0) return;
+                
+                if (confirm(`Are you sure you want to delete ${items.length} item(s)?`)) {
+                    items.forEach(item => {
+                        $.ajax({
+                            url: deleteItemUrl + item.path,
+                            method: 'POST',
+                            success: function(response) {
+                                if (response.status === 'success') {
+                                    location.reload();
+                                }
+                            },
+                            error: function() {
+                                alert('Error deleting items');
+                            }
+                        });
+                    });
+                }
+            }
+    
+            function copyItem(id, path, isFile) {
+                $('#copyModal').modal('show');
+                currentItems = [{
+                    id: id,
+                    path: path,
+                    type: isFile ? 'file' : 'folder'
+                }];
+            }
+    
+            function moveItem(id, path, isFile) {
+                $('#moveModal').modal('show');
+                currentItems = [{
+                    id: id,
+                    path: path,
+                    type: isFile ? 'file' : 'folder'
+                }];
+            }
+    
+            let currentItems = [];
+    
+            $('#copyModal').on('show.bs.modal', function () {
+                loadDestinations('copyDestination');
+            });
+    
+            $('#moveModal').on('show.bs.modal', function () {
+                loadDestinations('moveDestination');
+            });
+    
+            function loadDestinations(elementId) {
+                $.ajax({
+                    url: "{{ url_for('file_manager.get_folders') }}",
+                    method: 'GET',
+                    success: function(response) {
+                        const select = document.getElementById(elementId);
+                        select.innerHTML = '<option value="/">Root</option>';
+                        
+                        response.folders.forEach(folder => {
+                            const option = document.createElement('option');
+                            option.value = folder.path;
+                            option.textContent = folder.path;
+                            select.appendChild(option);
+                        });
+                    },
+                    error: function() {
+                        alert('Error loading destinations');
+                    }
+                });
+            }
+    
+            function confirmCopy() {
+                const destination = document.getElementById('copyDestination').value;
+                if (!destination) {
+                    alert('Please select a destination');
+                    return;
+                }
+    
+                currentItems.forEach(item => {
+                    $.ajax({
+                        url: "{{ url_for('file_manager.copy_item') }}",
+                        method: 'POST',
+                        data: {
+                            source_path: item.path,
+                            destination_path: destination,
+                            is_file: item.type === 'file'
+                        },
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                location.reload();
+                            }
+                        },
+                        error: function() {
+                            alert('Error copying items');
+                        }
+                    });
+                });
+                
+                $('#copyModal').modal('hide');
+            }
+    
+            function confirmMove() {
+                const destination = document.getElementById('moveDestination').value;
+                if (!destination) {
+                    alert('Please select a destination');
+                    return;
+                }
+    
+                currentItems.forEach(item => {
+                    $.ajax({
+                        url: "{{ url_for('file_manager.move_item') }}",
+                        method: 'POST',
+                        data: {
+                            source_path: item.path,
+                            destination_path: destination,
+                            is_file: item.type === 'file'
+                        },
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                location.reload();
+                            }
+                        },
+                        error: function() {
+                            alert('Error moving items');
+                        }
+                    });
+                });
+                
+                $('#moveModal').modal('hide');
+            }
+        </script>
 </body>
 </html>
