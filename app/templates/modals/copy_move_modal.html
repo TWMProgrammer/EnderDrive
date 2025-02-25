@@ -1,0 +1,62 @@
+<!-- Copy Modal -->
+<div class="modal fade" id="copyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: #2d3748;">
+            <div class="modal-header">
+                <h5 class="modal-title text-light">Copy Items</h5>
+                <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="text-light">Destination Path:</label>
+                    <select class="form-control" id="copyDestination" style="background: #1a202c; color: white; border-color: #4a5568;">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn register-btn" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn landing-btn" onclick="confirmCopy()">Copy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Move Modal -->
+<div class="modal fade" id="moveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: #2d3748;">
+            <div class="modal-header">
+                <h5 class="modal-title text-light">Move Items</h5>
+                <button type="button" class="close text-light" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="text-light">Destination Path:</label>
+                    <select class="form-control" id="moveDestination" style="background: #1a202c; color: white; border-color: #4a5568;">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn register-btn" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn landing-btn" onclick="confirmMove()">Move</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" data-backdrop="static" data-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: #2d3748;">
+            <div class="modal-body text-center p-4">
+                <div class="spinner-border text-light mb-3" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <h5 class="text-light mb-3">Preparing Download</h5>
+                <p class="text-light mt-3 mb-0">Please wait while we prepare your files...</p>
+            </div>
+        </div>
+    </div>
+</div>

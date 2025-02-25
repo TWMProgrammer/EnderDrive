@@ -1,0 +1,158 @@
+<div id="bulkOperationsToolbar" class="mb-4" style="display: none; background: #2d3748; padding: 1rem; border-radius: 10px;">
+    <div class="d-flex align-items-center">
+        <span class="text-light mr-3"><span id="selectedCount">0</span> items selected</span>
+        <div class="btn-group">
+            <button class="btn landing-btn" onclick="bulkDownload()" title="Download">
+                <i class="fas fa-download"></i> Download
+            </button>
+            <button class="btn landing-btn" onclick="bulkCopy()" title="Copy">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+            <button class="btn landing-btn" onclick="bulkMove()" title="Move">
+                <i class="fas fa-cut"></i> Move
+            </button>
+            <button class="btn landing-btn" onclick="bulkShare()" title="Share">
+                <i class="fas fa-share-alt"></i> Share
+            </button>
+            <button class="btn landing-btn register-btn" onclick="bulkDelete()" title="Delete">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+    // Bulk operations related functions
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBulkOperationsToolbar();
+    });
+
+    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkOperationsToolbar);
+    });
+
+    function updateBulkOperationsToolbar() {
+        const selectedItems = document.querySelectorAll('.item-checkbox:checked');
+        const toolbar = document.getElementById('bulkOperationsToolbar');
+        const selectedCount = document.getElementById('selectedCount');
+        
+        if (selectedItems.length > 0) {
+            toolbar.style.display = 'block';
+            selectedCount.textContent = selectedItems.length;
+        } else {
+            toolbar.style.display = 'none';
+        }
+    }
+
+    function bulkDownload() {
+        const items = getSelectedItems();
+        
+        if (items.length === 0) {
+            alert('Please select at least one item to download');
+            return;
+        }
+
+        // Show loading modal
+        $('#loadingModal').modal('show');
+
+        // Send request to create zip file
+        fetch("{{ url_for('file_manager.bulk_download') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ items: items })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // Create a temporary link to download the file
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bulk_download_${new Date().toISOString().slice(0,19).replace(/[-:]/g, '')}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error preparing download. Please try again.');
+        })
+        .finally(() => {
+            // Hide loading modal
+            $('#loadingModal').modal('hide');
+        });
+    }
+
+    function bulkCopy() {
+        const items = getSelectedItems();
+        if (items.length === 0) return;
+        
+        // Show copy modal with selected items
+        $('#copyModal').modal('show');
+        currentItems = items;
+    }
+
+    function bulkMove() {
+        const items = getSelectedItems();
+        if (items.length === 0) return;
+        
+        // Show move modal with selected items
+        $('#moveModal').modal('show');
+        currentItems = items;
+    }
+
+    function bulkShare() {
+        const items = getSelectedItems();
+        if (items.length === 0) {
+            alert('Please select at least one item to share');
+            return;
+        }
+        
+        // Show share modal with selected items
+        $('#shareModal').modal('show');
+        currentItems = items;
+        
+        // Update modal title to reflect bulk operation
+        $('#shareModal .modal-title').text(`Share ${items.length} Items`);
+        
+        // Hide any previously shown share links
+        $('#shareLinkContainer').hide();
+        $('#shareLinksContainer').remove();
+        
+        // Add container for multiple share links
+        const shareLinksContainer = $('<div id="shareLinksContainer" class="mt-3" style="display: none;"></div>');
+        $('#shareLinkContainer').after(shareLinksContainer);
+    }
+
+    function bulkDelete() {
+        const items = getSelectedItems();
+        if (items.length === 0) return;
+        
+        if (confirm(`Are you sure you want to delete ${items.length} item(s)?`)) {
+            items.forEach(item => {
+                $.ajax({
+                    url: deleteItemUrl + item.path,
+                    method: 'POST',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            location.reload();
+                        }
+                    },
+                    error: function() {
+                        alert('Error deleting items');
+                    }
+                });
+            });
+        }
+    }
+</script>
