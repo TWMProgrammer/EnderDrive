@@ -3,7 +3,7 @@
 Just a very basic implementation of a Google-Drive or HFS-like application written in python.
 It is designed to run on Linux and Windows.
 
-Features:
+## Features
 
     - Registration
     - Login
@@ -13,12 +13,13 @@ Features:
     - Upload folders functionality
     - Share files or folders functionality with random generated links
     - Bulk downloads
-To-do:
+
+## To-do
 
     - Back button fix in shared browsing
     - General search utilising database for faster searching
 
-For docker:
+## For docker
 
     Image: twm420k/enderdrive
     Inner port: 5000
@@ -26,6 +27,6 @@ For docker:
         - /app/instance
         - /app/uploads
 
-Run:
+Docker Run:
 
     docker run -d -p 5000:5000 -v enderdrive_instance:/app/instance -v enderdrive_uploads:/app/uploads twm420k/enderdrive

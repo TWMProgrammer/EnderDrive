@@ -316,6 +316,57 @@ def move_item():
     except Exception as e:
         return {'status': 'error', 'message': str(e)}, 500
 
+@file_manager.route('/search')
+def search_items():
+    if 'user_id' not in session:
+        return {'status': 'error', 'message': 'Not logged in'}, 401
+        
+    user_id = session['user_id']
+    query = request.args.get('q', '').strip()
+    
+    if not query:
+        return {'status': 'error', 'message': 'No search query provided'}, 400
+    
+    # Search in both files and folders using database queries
+    files = File.query.filter(
+        File.owner_id == user_id,
+        File.name.ilike(f'%{query}%')
+    ).all()
+    
+    folders = Folder.query.filter(
+        Folder.owner_id == user_id,
+        Folder.name.ilike(f'%{query}%')
+    ).all()
+    
+    results = []
+    
+    # Process files
+    for file in files:
+        results.append({
+            'name': os.path.basename(file.name),
+            'path': file.name,
+            'is_file': True,
+            'size': file.size,
+            'created_at': file.created_at.isoformat(),
+            'id': file.id
+        })
+    
+    # Process folders
+    for folder in folders:
+        results.append({
+            'name': os.path.basename(folder.name),
+            'path': folder.name,
+            'is_file': False,
+            'size': 0,
+            'created_at': folder.created_at.isoformat(),
+            'id': folder.id
+        })
+    
+    # Sort results - folders first, then files
+    results.sort(key=lambda x: (x['is_file'], x['name'].lower()))
+    
+    return {'status': 'success', 'results': results}
+
 @file_manager.route('/browse/folders')
 def get_folders():
     if 'user_id' not in session:
