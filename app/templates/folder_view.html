@@ -15,6 +15,17 @@
 <body style="background: linear-gradient(135deg, #1a1c2c 0%, #2d3748 100%); min-height: 100vh;">
     {% include 'components/navbar.html' %}
 
+    {# Include all modals #}
+    {% include 'components/modals/upload_modal.html' %}
+    {% include 'components/modals/new_folder_modal.html' %}
+    {% include 'components/modals/shares_modal.html' %}
+
+    {% include 'components/modals/share_modal.html' %}
+    {% include 'components/modals/extend_share_modal.html' %}
+    {% include 'components/modals/share_edit_modal.html' %}
+    {% include 'components/modals/global_search_modal.html' %}
+    {% include 'components/modals/copy_move_modal.html' %}
+
     {% block content %}
     {% include 'components/file_table.html' %}
 
@@ -308,6 +319,59 @@
                                                     </div>
                                                 </div>
                                             `);
+
+                                        // Add the new share to the shares table
+                                        const sharesTable = document.querySelector('#sharesTable tbody');
+                                        if (sharesTable) {
+                                            const newRow = `
+                                                <tr data-share-token="${response.token}">
+                                                    <td>
+                                                        <input type="checkbox" class="share-select" data-share-token="${response.token}">
+                                                    </td>
+                                                    <td class="text-truncate" style="max-width: 150px;" title="${shareName}">
+                                                        ${shareName}
+                                                    </td>
+                                                    <td class="text-truncate" style="max-width: 200px;" title="${description || 'No description'}">
+                                                        ${description || 'No description'}
+                                                    </td>
+                                                    <td>${response.item_type === 'file' ? 'File' : 'Folder'}</td>
+                                                    <td>${new Date().toLocaleString()}</td>
+                                                    <td>${new Date(Date.now() + (expiresIn * 24 * 60 * 60 * 1000)).toLocaleString()}</td>
+                                                    <td>
+                                                        <div class="input-group">
+                                                            <div>
+                                                                <button class="btn btn-sm btn-primary copy-link" onclick="copyShareLink(this)"
+                                                                    data-link="${response.share_link}" title="Copy link to clipboard">
+                                                                    <i class="fas fa-copy"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-primary"
+                                                                    onclick="window.open(this.getAttribute('data-link'), '_blank')"
+                                                                    data-link="${response.share_link}" title="Open share in new tab">
+                                                                    <i class="fas fa-external-link-alt"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="btn-group">
+                                                            <button class="btn btn-sm btn-info edit-share"
+                                                                onclick="showEditShareModal('${response.token}')" title="Edit share">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm btn-warning extend-share"
+                                                                onclick="extendShare('${response.token}')" title="Extend expiration">
+                                                                <i class="fas fa-clock"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm btn-danger delete-share"
+                                                                onclick="deleteShare('${response.token}')" title="Delete share">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            `;
+                                            sharesTable.insertAdjacentHTML('afterbegin', newRow);
+                                        }
                                     } else {
                                         linksList.empty();
                                         linksList.append(`
