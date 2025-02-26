@@ -462,6 +462,16 @@ def download_shared(token, path=''):
     if not share or not share.is_valid:
         abort(404)
     
+    if share.is_bulk_parent:
+        # For bulk shares, find the child share that matches the requested file
+        child_share = SharedLink.query.filter_by(
+            bulk_share_id=share.bulk_share_id,
+            name=path
+        ).first()
+        if not child_share:
+            abort(404)
+        share = child_share
+    
     if share.file_id:
         file = share.file
         if not file:
