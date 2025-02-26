@@ -7,6 +7,8 @@ from app.models.user import User
 from app.utils.decorators import login_required
 from datetime import datetime, timedelta
 import os
+import zipfile
+import tempfile
 
 sharing = Blueprint('sharing', __name__)
 
@@ -557,3 +559,63 @@ def update_share(token):
     except Exception as e:
         db.session.rollback()
         return {'success': False, 'message': str(e)}, 500
+
+@sharing.route('/bulk_download', methods=['POST'])
+def bulk_download():
+    token = request.form.get('token')
+    current_folder = request.form.get('current_folder', '')
+    share = SharedLink.query.filter_by(token=token).first()
+    if not share or not share.is_valid:
+        abort(404)
+    
+    if share.is_bulk_parent:
+        # For bulk shares, find the child shares that match the requested files
+        child_shares = SharedLink.query.filter_by(
+            bulk_share_id=share.bulk_share_id
+        ).all()
+    else:
+        child_shares = [share]
+    
+    # Create a temporary directory to store the files
+    temp_dir = tempfile.mkdtemp()
+    
+    # Create a zip file
+    zip_path = os.path.join(temp_dir, 'bulk_download.zip')
+    with zipfile.ZipFile(zip_path, 'w') as zip_file:
+        for child_share in child_shares:
+            if child_share.file_id:
+                file = child_share.file
+                if file:
+                    owner = db.session.get(User, file.owner_id)
+                    if owner:
+                        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], owner.username, file.name)
+                        # Only include files in the current folder for bulk shares
+                        if share.is_bulk_parent:
+                            file_relative_path = file.name.replace('\\', '/')
+                            if current_folder and not file_relative_path.startswith(current_folder):
+                                continue
+                            zip_name = os.path.basename(file.name)
+                        else:
+                            zip_name = os.path.basename(file.name)
+                        zip_file.write(file_path, zip_name)
+            elif child_share.folder_id:
+                folder = child_share.folder
+                if folder:
+                    owner = db.session.get(User, folder.owner_id)
+                    if owner:
+                        folder_path = os.path.join(current_app.config['UPLOAD_FOLDER'], owner.username, folder.name)
+                        # If current_folder is specified, adjust the base path
+                        if current_folder:
+                            current_path = os.path.join(folder_path, current_folder)
+                            if os.path.exists(current_path) and current_path.startswith(folder_path):
+                                folder_path = current_path
+                        
+                        for root, dirs, files in os.walk(folder_path):
+                            for file in files:
+                                file_path = os.path.join(root, file)
+                                # Create relative path for the zip file
+                                zip_name = os.path.relpath(file_path, folder_path)
+                                zip_file.write(file_path, zip_name)
+    
+    # Return the zip file
+    return send_file(zip_path, as_attachment=True)
