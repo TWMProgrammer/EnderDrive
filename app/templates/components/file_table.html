@@ -94,8 +94,11 @@
                             {% endif %}
                         </td>
                         <td style="vertical-align: middle;">{{ 'File' if item.is_file else 'Folder' }}</td>
-                        <td style="vertical-align: middle;">{{ item.size | filesizeformat if item.is_file else '-' }}</td>
-                        <td style="vertical-align: middle;">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td style="vertical-align: middle;">{{ item.size | filesizeformat if item.is_file else '-' }}
+                        </td>
+                        <td style="vertical-align: middle;" title="{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}">
+                            <span class="relative-time" data-timestamp="{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </td>
                         <td style="vertical-align: middle;">
                             <div class="btn-group" style="width: 100%;">
                                 {% if item.is_file %}
