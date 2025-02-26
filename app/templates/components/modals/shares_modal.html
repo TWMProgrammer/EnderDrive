@@ -30,73 +30,108 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for share in shared_links %}
-                        {% if not share.bulk_share_id or share.is_bulk_parent %}
-                        <tr data-share-token="{{ share.token }}" {% if share.bulk_share_id
-                            %}data-bulk-share-id="{{ share.bulk_share_id }}" {% endif %}>
-                            <td>
-                                <input type="checkbox" class="share-select" data-share-token="{{ share.token }}">
-                            </td>
-                            <td class="text-truncate" style="max-width: 150px;"
-                                title="{{ share.name if share.name else 'Untitled' }}">{{ share.name if share.name else
-                                'Untitled' }}</td>
-                            <td class="text-truncate" style="max-width: 200px;"
-                                title="{{ share.description if share.description else 'No description' }}">{{
-                                share.description if share.description else 'No description' }}</td>
-                            <td>{{ 'Bulk Share' if share.is_bulk_parent else ('File' if share.file else 'Folder') }}
-                            </td>
-                            <td>{{ share.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>{{ share.expires_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>
-                                <div class="input-group">
-                                    <div>
-                                        <button class="btn btn-sm btn-primary copy-link" onclick="copyShareLink(this)"
-                                            data-link="{{ url_for('sharing.view_shared', token=share.token, _external=True) }}"
-                                            title="Copy link to clipboard">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-primary"
-                                            onclick="window.open(this.getAttribute('data-link'), '_blank')"
-                                            data-link="{{ url_for('sharing.view_shared', token=share.token, _external=True) }}"
-                                            title="Open share in new tab">
-                                            <i class="fas fa-external-link-alt"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-info edit-share"
-                                        onclick="showEditShareModal('{{ share.token }}')" title="Edit share">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-warning extend-share"
-                                        onclick="extendShare('{{ share.token }}')" title="Extend expiration">
-                                        <i class="fas fa-clock"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger delete-share"
-                                        onclick="deleteShare('{{ share.token }}')" title="Delete share">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
-</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const table = document.getElementById('sharesTable');
-        const selectAll = table.querySelector('.select-all-shares');
+        const selectAll = document.querySelector('.select-all-shares');
         const bulkActions = document.querySelector('.bulk-actions');
         const bulkParentCols = document.querySelectorAll('.bulk-parent-col');
+
+        // Function to fetch shares and update the table
+        function fetchAndUpdateShares() {
+            fetch("{{ url_for('sharing.get_user_shares') }}")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Clear existing rows
+                        const tbody = table.querySelector('tbody');
+                        tbody.innerHTML = '';
+                        
+                        // Add new rows
+                        data.shares.forEach(share => {
+                            const row = document.createElement('tr');
+                            row.dataset.shareToken = share.token;
+                            if (share.bulk_share_id) {
+                                row.dataset.bulkShareId = share.bulk_share_id;
+                            }
+                            
+                            row.innerHTML = `
+                                <td>
+                                    <input type="checkbox" class="share-select" data-share-token="${share.token}">
+                                </td>
+                                <td class="text-truncate" style="max-width: 150px;" 
+                                    title="${share.name || 'Untitled'}">${share.name || 'Untitled'}</td>
+                                <td class="text-truncate" style="max-width: 200px;" 
+                                    title="${share.description || 'No description'}">${share.description || 'No description'}</td>
+                                <td>${share.is_bulk_parent ? 'Bulk Share' : (share.file ? 'File' : 'Folder')}</td>
+                                <td>${share.created_at}</td>
+                                <td>${share.expires_at}</td>
+                                <td>
+                                    <div class="input-group">
+                                        <div>
+                                            <button class="btn btn-sm btn-primary copy-link" onclick="copyShareLink(this)"
+                                                data-link="${share.share_link}"
+                                                title="Copy link to clipboard">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-primary"
+                                                onclick="window.open(this.getAttribute('data-link'), '_blank')"
+                                                data-link="${share.share_link}"
+                                                title="Open share in new tab">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-info edit-share"
+                                            onclick="showEditShareModal('${share.token}')" title="Edit share">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-warning extend-share"
+                                            onclick="extendShare('${share.token}')" title="Extend expiration">
+                                            <i class="fas fa-clock"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-share"
+                                            onclick="deleteShare('${share.token}')" title="Delete share">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            `;
+                            
+                            tbody.appendChild(row);
+                        });
+                        
+                        // Show bulk parent column if any shares have bulk parents
+                        const hasBulkShares = Array.from(table.querySelectorAll('tbody tr')).some(row => row.dataset.bulkShareId);
+                        if (hasBulkShares) {
+                            bulkParentCols.forEach(col => col.style.display = '');
+                        }
+                        
+                        // Initialize bulk actions
+                        updateBulkActions();
+                    } else {
+                        console.error('Error fetching shares:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching shares:', error);
+                });
+        }
+        
+        // Add event listener to the modal to fetch shares when it's opened
+        $('#manageSharesModal').on('show.bs.modal', function () {
+            fetchAndUpdateShares();
+        });
 
         // Show bulk parent column if any shares have bulk parents
         const hasBulkShares = Array.from(table.querySelectorAll('tbody tr')).some(row => row.dataset.bulkShareId);

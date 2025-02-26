@@ -619,3 +619,34 @@ def bulk_download():
     
     # Return the zip file
     return send_file(zip_path, as_attachment=True)
+
+@sharing.route('/get_user_shares', methods=['GET'])
+@login_required
+def get_user_shares():
+    """Get all shares for the current user"""
+    try:
+        user_id = session['user_id']
+        # Only get bulk parent shares or standalone shares (not child shares in a bulk share)
+        shared_links = SharedLink.query.filter_by(created_by=user_id).filter(
+            (SharedLink.is_bulk_parent == True) | (SharedLink.bulk_share_id == None)
+        ).order_by(SharedLink.created_at.desc()).all()
+        
+        shares_data = []
+        for share in shared_links:
+            share_data = {
+                'token': share.token,
+                'name': share.name,
+                'description': share.description,
+                'created_at': share.created_at.strftime('%Y-%m-%d %H:%M'),
+                'expires_at': share.expires_at.strftime('%Y-%m-%d %H:%M'),
+                'is_bulk_parent': share.is_bulk_parent,
+                'bulk_share_id': share.bulk_share_id,
+                'file': share.file_id is not None,
+                'folder': share.folder_id is not None,
+                'share_link': url_for('sharing.view_shared', token=share.token, _external=True)
+            }
+            shares_data.append(share_data)
+            
+        return {'status': 'success', 'shares': shares_data}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}, 500
