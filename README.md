@@ -55,7 +55,6 @@ EnderDrive is a secure cloud storage solution that allows users to store, share,
 
 - Bootstrap CSS Framework for responsive design
 - Jinja2 Templating Engine
-- Modern and responsive UI
 
 ### Storage & Security
 
@@ -63,28 +62,11 @@ EnderDrive is a secure cloud storage solution that allows users to store, share,
 - File system storage with security measures
 - python-magic for file type validation
 
-## Dependencies
-
-```txt
-Flask==2.3.1                 # Main web framework for building the application
-gunicorn==23.0.0            # Production-grade WSGI server on Linux
-Flask-SQLAlchemy==3.1.1     # Flask extension for SQLAlchemy ORM integration
-greenlet==3.1.1             # Lightweight coroutines for Python, required by SQLAlchemy
-itsdangerous==2.2.0         # Security module for signing data
-Jinja2==3.1.5              # Template engine for rendering HTML
-MarkupSafe==3.0.2          # HTML string escaping for security
-SQLAlchemy==2.0.38         # SQL toolkit and ORM
-typing_extensions==4.12.2   # Backported typing hints support
-Werkzeug==3.1.3            # WSGI utility library for web applications
-python-magic==0.4.27       # File type detection library
-waitress==3.0.2            # Production-grade WSGI server on Windows
-```
-
 ## Docker Setup
 
 ### Container Configuration
 
-- Image: twm420k/enderdrive
+- Image: ghcr.io/twm420k/enderdrive:main
 - Exposed Port: 5000
 
 ### Volume Mounts
@@ -99,7 +81,7 @@ docker run -d \
   -p 5000:5000 \
   -v enderdrive_instance:/app/instance \
   -v enderdrive_uploads:/app/uploads \
-  twm420k/enderdrive
+  ghcr.io/twm420k/enderdrive:main
 ```
 
 ## Quick Start with Docker Compose
@@ -109,7 +91,7 @@ version: "3.8"
 
 services:
   enderdrive:
-    image: twm420k/enderdrive
+    image: ghcr.io/twm420k/enderdrive:main
     container_name: enderdrive
     ports:
       - "5000:5000"
@@ -137,6 +119,12 @@ The application includes separate configurations for development and production 
 
 - Development server: `run_debug.py`
 - Production server: `run_production.py`
+
+**Note:** While Waitress is not included in the base requirements, the code includes support for running on Windows using Waitress. To use Waitress on Windows, simply install it using:
+
+```bash
+pip install waitress
+```
 
 ## Project Structure
 
