@@ -107,38 +107,35 @@
         let currentItemType = '';
 
         function shareItem(id, path, isFile) {
-            if (!id || id === 'null' || id === 'undefined' || id === 'None') {
-                alert('Invalid item ID. Please try refreshing the page.');
-                return;
-            }
-
-            // Set currentItems as an array with a single item
-            currentItems = [{
-                id: id,
-                path: path,
-                type: isFile ? 'file' : 'folder'
-            }];
-
-            // Show share modal with selected items
-            $('#shareModal').modal('show');
-
-            // Update modal title
-            $('#shareModal .modal-title').text(`Share ${isFile ? 'File' : 'Folder'}`);
-
-            // Set default share name based on the item's path
-            const itemName = path.split('/').pop();
-            $('#shareName').val(itemName);
+            // Reset form fields
+            $('#shareName').val(path.split('/').pop());
             $('#shareDescription').val('');
             $('#sharePassword').val('');
             $('#expiresIn').val('7');
 
             // Hide any previously shown share links
             $('#shareLinkContainer').hide();
+
+            // Remove existing shareLinksContainer if it exists
             $('#shareLinksContainer').remove();
 
             // Add container for share links
             const shareLinksContainer = $('<div id="shareLinksContainer" class="mt-3" style="display: none;"></div>');
             $('#shareLinkContainer').after(shareLinksContainer);
+
+            // Ensure the Generate Link button is visible
+            $('#shareModal .landing-btn').show();
+
+            // Set current items
+            currentItems = [{
+                id: id,
+                path: path,
+                type: isFile ? 'file' : 'folder'
+            }];
+
+            // Show modal
+            $('#shareModal').modal('show');
+            $('#shareModal .modal-title').text(`Share ${isFile ? 'File' : 'Folder'}`);
         }
 
         function getSelectedItems() {
@@ -187,6 +184,9 @@
                 alert('Description must be less than 500 characters');
                 return;
             }
+
+            // Hide the Generate Link button
+            $('#shareModal .landing-btn').hide();
 
             const shareLinksContainer = $('#shareLinksContainer');
 
@@ -237,12 +237,8 @@
                                 linksList.empty();
                                 linksList.append(`
                                         <div class="list-group-item" style="background: #2d3748; border-color: #4a5568;">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <i class="fas fa-folder mr-2"></i>
-                                                    Shared Folder (${totalItems} items)
-                                                </div>
-                                                <div class="input-group" style="max-width: 350px;">
+                                            <div class="d-flex flex-column">
+                                                <div class="input-group mb-2">
                                                     <input type="text" class="form-control form-control-sm" 
                                                         value="${response.share_link}" 
                                                         readonly
@@ -254,6 +250,10 @@
                                                             <i class="fas fa-copy"></i>
                                                         </button>
                                                     </div>
+                                                </div>
+                                                <div style="color: white;">
+                                                    <i class="fas fa-folder mr-2"></i>
+                                                    Shared Folder (${totalItems} items)
                                                 </div>
                                             </div>
                                         </div>
@@ -298,12 +298,8 @@
                                         linksList.empty();
                                         linksList.append(`
                                                 <div class="list-group-item" style="background: #2d3748; border-color: #4a5568;">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <i class="fas fa-${item.type === 'file' ? 'file' : 'folder'} mr-2"></i>
-                                                            ${item.path.split('/').pop()}
-                                                        </div>
-                                                        <div class="input-group" style="max-width: 350px;">
+                                                    <div class="d-flex flex-column">
+                                                        <div class="input-group mb-2">
                                                             <input type="text" class="form-control form-control-sm" 
                                                                 value="${response.share_link}" 
                                                                 readonly
@@ -316,7 +312,12 @@
                                                                 </button>
                                                             </div>
                                                         </div>
+                                                        <div style="color: white;">
+                                                    <i class="fas fa-${item.type === 'file' ? 'file' : 'folder'} mr-2"></i>
+                                                    ${item.path.split('/').pop()}
+                                                </div>
                                                     </div>
+                                                    
                                                 </div>
                                             `);
 
@@ -546,6 +547,12 @@
             $('#manageSharesModal').modal('show');
         });
 
+        // Reset share modal when it's hidden
+        $('#shareModal').on('hidden.bs.modal', function () {
+            // Ensure the Generate Link button is visible for next time
+            $('#shareModal .landing-btn').show();
+        });
+
         $('#extendShareModal').on('hidden.bs.modal', function () {
             $('#manageSharesModal').modal('show');
         });
@@ -647,20 +654,31 @@
                 return;
             }
 
-            // Show share modal with selected items
-            $('#shareModal').modal('show');
-            currentItems = items;
-
-            // Update modal title to reflect bulk operation
-            $('#shareModal .modal-title').text(`Share ${items.length} Items`);
+            // Reset form fields
+            $('#shareName').val('Shared Items');
+            $('#shareDescription').val('');
+            $('#sharePassword').val('');
+            $('#expiresIn').val('7');
 
             // Hide any previously shown share links
             $('#shareLinkContainer').hide();
+
+            // Remove existing shareLinksContainer if it exists
             $('#shareLinksContainer').remove();
 
-            // Add container for multiple share links
+            // Add container for share links
             const shareLinksContainer = $('<div id="shareLinksContainer" class="mt-3" style="display: none;"></div>');
             $('#shareLinkContainer').after(shareLinksContainer);
+
+            // Ensure the Generate Link button is visible
+            $('#shareModal .landing-btn').show();
+
+            // Set current items
+            currentItems = items;
+
+            // Show modal
+            $('#shareModal').modal('show');
+            $('#shareModal .modal-title').text(`Share ${items.length} Items`);
         }
 
         function bulkDelete() {
