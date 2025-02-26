@@ -476,6 +476,11 @@
                 });
         }
 
+        // Handle modal hidden event to show shares modal
+        $('#editShareModal').on('hidden.bs.modal', function () {
+            $('#manageSharesModal').modal('show');
+        });
+
         $('#extendShareModal').on('hidden.bs.modal', function () {
             $('#manageSharesModal').modal('show');
         });

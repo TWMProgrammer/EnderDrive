@@ -10,19 +10,23 @@
                     <input type="hidden" id="editShareToken">
                     <div class="form-group">
                         <label for="editShareName" class="text-light">Share Name</label>
-                        <input type="text" class="form-control" id="editShareName" name="name" style="background: #1a202c; color: white; border-color: #4a5568;">
+                        <input type="text" class="form-control" id="editShareName" name="name"
+                            style="background: #1a202c; color: white; border-color: #4a5568;">
                     </div>
                     <div class="form-group">
                         <label for="editShareDescription" class="text-light">Description</label>
-                        <textarea class="form-control" id="editShareDescription" name="description" rows="3" style="background: #1a202c; color: white; border-color: #4a5568;"></textarea>
+                        <textarea class="form-control" id="editShareDescription" name="description" rows="3"
+                            style="background: #1a202c; color: white; border-color: #4a5568;"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="editShareExpiry" class="text-light">Expiry Date</label>
-                        <input type="datetime-local" class="form-control" id="editShareExpiry" name="expires_at" style="background: #1a202c; color: white; border-color: #4a5568;">
+                        <input type="datetime-local" class="form-control" id="editShareExpiry" name="expires_at"
+                            style="background: #1a202c; color: white; border-color: #4a5568;">
                     </div>
                     <div class="form-group">
                         <label for="editSharePassword" class="text-light">Password (leave empty for no password)</label>
-                        <input type="password" class="form-control" id="editSharePassword" name="password" style="background: #1a202c; color: white; border-color: #4a5568;">
+                        <input type="password" class="form-control" id="editSharePassword" name="password"
+                            style="background: #1a202c; color: white; border-color: #4a5568;">
                     </div>
                 </form>
             </div>
@@ -37,15 +41,12 @@
 <script>
     let currentShareToken = null;
 
-    // Handle modal hidden event to show shares modal
-    $('#editShareModal').on('hidden.bs.modal', function () {
-        $('#manageSharesModal').modal('show');
-    });
+
 
     function showEditShareModal(token) {
         currentShareToken = token;
         $('#manageSharesModal').modal('hide');
-        
+
         fetch(`/api/shares/${token}`)
             .then(response => response.json())
             .then(share => {
@@ -71,7 +72,7 @@
     function confirmEditShare() {
         const formData = new FormData(document.getElementById('editShareForm'));
         const data = Object.fromEntries(formData.entries());
-        
+
         fetch(`/api/shares/${currentShareToken}`, {
             method: 'PUT',
             headers: {
@@ -79,19 +80,19 @@
             },
             body: JSON.stringify(data)
         })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                $('#editShareModal').modal('hide');
-                // The hidden.bs.modal event will show the shares modal
-                location.reload();
-            } else {
-                alert('Failed to update share: ' + result.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Failed to update share');
-        });
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    $('#editShareModal').modal('hide');
+                    // The hidden.bs.modal event will show the shares modal
+                    location.reload();
+                } else {
+                    alert('Failed to update share: ' + result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update share');
+            });
     }
 </script>
