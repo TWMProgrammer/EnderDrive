@@ -1,0 +1,9 @@
+/* Main CSS file that imports all component styles */
+
+/* Import component-specific styles */
+@import 'main.css';
+@import 'login.css';
+@import 'landing.css';
+@import 'modals.css';
+@import 'profile.css';
+@import 'dropdown.css';

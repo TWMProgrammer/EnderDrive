@@ -1,0 +1,137 @@
+/* Modal Styles */
+.modal-content {
+    background: white;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+/* File Upload Modal */
+#fileUploadModal {
+    position: fixed;
+    bottom: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+.previews {
+    padding: 10px;
+    margin-top: 10px;
+    min-height: 150px;
+    overflow-y: auto;
+}
+
+/* Modal Content Styling */
+.modal-content {
+    background: #2d3748;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: 1px solid #4a5568;
+    padding: 1rem 1.5rem;
+}
+
+.modal-title {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #4a5568;
+    padding: 1rem 1.5rem;
+}
+
+/* Custom File Input */
+.custom-file-input {
+    cursor: pointer;
+}
+
+.custom-file-label {
+    background: #1a202c;
+    color: white;
+    border-color: #4a5568;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.custom-file-label::after {
+    background: #4299e1;
+    color: white;
+    content: "Browse";
+}
+
+/* Upload Button */
+.upload-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+/* Modal Button Styling */
+.modal .landing-btn {
+    padding: 0.5rem 1.5rem;
+    font-size: 14px;
+}
+
+.modal .register-btn {
+    color: #4299e1;
+}
+
+.modal .register-btn:hover {
+    color: #667eea;
+}
+
+/* Close Button */
+.modal .close {
+    color: #a0aec0;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.modal .close:hover {
+    opacity: 1;
+    color: white;
+}
+
+/* Form Controls in Modals */
+.modal .form-control {
+    background: #1a202c;
+    border: 2px solid #4a5568;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.modal .form-control:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* Radio Button Group */
+.btn-group-toggle .btn-outline-primary {
+    color: #4299e1;
+    border-color: #4299e1;
+    background: transparent;
+}
+
+.btn-group-toggle .btn-outline-primary:hover,
+.btn-group-toggle .btn-outline-primary:not(:disabled):not(.disabled).active {
+    background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
+    border-color: #4299e1;
+    color: white;
+}
+
+/* White Text Helper */
+.white-text {
+    color: white;
+}

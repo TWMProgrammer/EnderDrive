@@ -1,0 +1,74 @@
+/* Landing Page Styles */
+.landing-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1c2c 0%, #2d3748 100%);
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.landing-container {
+    width: 100%;
+    padding: 20px;
+    max-width: 800px;
+}
+
+.landing-box {
+    background: #2d3748;
+    padding: 60px 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.landing-title {
+    color: #ffffff;
+    font-size: 42px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.landing-description {
+    color: #a0aec0;
+    font-size: 18px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.button-group {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.landing-btn {
+    padding: 12px 40px;
+    background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.landing-btn:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #3182ce 0%, #5a67d8 100%);
+    color: white;
+    text-decoration: none;
+}
+
+.register-btn {
+    background: transparent;
+    border: 2px solid #4299e1;
+}
+
+.register-btn:hover {
+    background: rgba(66, 153, 225, 0.1);
+    border-color: #667eea;
+}
