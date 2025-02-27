@@ -20,6 +20,9 @@
         <button class="btn landing-btn ml-2" data-toggle="modal" data-target="#folderModal">
             <i class="fas fa-folder-plus"></i> New Folder
         </button>
+        <a href="{{ url_for('auth.profile') }}" class="btn landing-btn ml-2">
+            <i class="fas fa-user-cog"></i> Profile
+        </a>
         <a href="{{ url_for('auth.logout') }}" class="btn landing-btn register-btn ml-2">
             <i class="fas fa-sign-out-alt"></i> Logout
         </a>
