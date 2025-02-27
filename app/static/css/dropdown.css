@@ -26,9 +26,19 @@
 }
 
 .dropdown-item:hover {
-    background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
+    background-color: rgba(66, 153, 225, 0.8);
     color: white !important;
-    transform: translateX(5px);
+    transform: translateX(3px);
+    border-radius: 6px;
+    margin: 0 0.3rem;
+    width: calc(100% - 0.6rem);
+}
+
+/* Add higher specificity for text color on hover */
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:hover.text-light,
+.dropdown-menu .dropdown-item:hover.text-danger {
+    color: white !important;
 }
 
 .dropdown-item i {

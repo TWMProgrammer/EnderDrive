@@ -1,7 +1,8 @@
 {% block content %}
 <div class="container mt-4">
     <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb" style="background: #1a202c; border-radius: 10px;">
+        <ol class="breadcrumb"
+            style="background: #1a202c; border-radius: 10px; padding: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
             <li class="breadcrumb-item">
                 <a href="{{ url_for('file_manager.browse', path='') }}" class="text-light">
                     <i class="fas fa-home"></i> Home
@@ -16,15 +17,18 @@
         </ol>
     </nav>
 
-    <div class="landing-box" style="padding: 2rem; margin-top: 1rem;">
+    <div class="landing-box" style="padding: 2rem; margin-top: 1rem; box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="mb-0 text-light">Files and Folders</h4>
+            <h4 class="mb-0 text-light" style="font-weight: 600; font-size: 24px;">
+                <i class="fas fa-folder-open mr-2"></i> Files and Folders
+            </h4>
             <div class="search-container" style="width: 400px;">
                 <div class="input-group">
-                    <input type="text" id="fileSearch" class="form-control" placeholder="Search files and folders..."
-                        style="background: #1a202c; border: 2px solid #4a5568; color: white;">
+                    <input type="text" id="fileSearch" class="form-control" placeholder="Filter files and folders..."
+                        style="background: #1a202c; border: 2px solid #4a5568; color: white; border-radius: 10px 0 0 10px; padding: 10px 15px; transition: all 0.3s ease;">
                     <div class="input-group-append">
-                        <span class="input-group-text" style="background: #1a202c; border-color: #4a5568;">
+                        <span class="input-group-text"
+                            style="background: #4299e1; border-color: #4299e1; border-radius: 0 10px 10px 0;">
                             <i class="fas fa-search text-light"></i>
                         </span>
                     </div>
@@ -35,20 +39,21 @@
         {% include 'components/bulk_operations.html' %}
 
         <div class="table-responsive">
-            <table class="table table-dark table-hover" style="background: #1a202c; border-radius: 10px;">
-                <thead class="thead-light">
+            <table class="table table-dark table-hover">
+                <thead>
                     <tr>
-                        <th style="width: 40px; text-align: center; vertical-align: middle;">
+                        <th class="th-checkbox"
+                            style="width: 40px; text-align: center; vertical-align: middle; border-top: none; padding: 15px 10px;">
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" id="selectAll" class="custom-control-input">
                                 <label class="custom-control-label" for="selectAll"></label>
                             </div>
                         </th>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Size</th>
-                        <th>Created</th>
-                        <th style="width: 120px; min-width: 120px;">Actions</th>
+                        <th style="border-top: none; padding: 15px;">Name</th>
+                        <th style="border-top: none; padding: 15px;">Type</th>
+                        <th style="border-top: none; padding: 15px;">Size</th>
+                        <th style="border-top: none; padding: 15px;">Created</th>
+                        <th style="width: 160px; min-width: 160px; border-top: none; padding: 15px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -57,15 +62,17 @@
                         <td></td>
                         <td colspan="5">
                             <a href="{{ url_for('file_manager.browse', path=current_path.rsplit('/', 1)[0] if '/' in current_path else '') }}"
-                                class="text-light">
-                                <i class="fas fa-level-up-alt"></i> ..
+                                class="text-light d-flex align-items-center"
+                                style="padding: 10px; transition: all 0.2s ease;">
+                                <i class="fas fa-level-up-alt mr-2" style="font-size: 1.2em;"></i> <span>Parent
+                                    Directory</span>
                             </a>
                         </td>
                     </tr>
                     {% endif %}
 
                     {% for item in items %}
-                    <tr style="border-color: #2d3748;">
+                    <tr class="file-row">
                         <td style="text-align: center; vertical-align: middle;">
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input item-checkbox"
@@ -80,54 +87,66 @@
                         </td>
                         <td style="vertical-align: middle;">
                             {% if item.is_file %}
-                            <i class="fas fa-file text-primary"></i>
-                            <a href="{{ url_for('file_manager.download_file', path=item.path.replace('\\', '/')) }}"
-                                class="text-light ml-2">
-                                {{ item.name }}
-                            </a>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file text-primary" style="font-size: 1.2em; width: 24px;"></i>
+                                <a href="{{ url_for('file_manager.download_file', path=item.path.replace('\\', '/')) }}"
+                                    class="text-light ml-2 file-link">
+                                    {{ item.name }}
+                                </a>
+                            </div>
                             {% else %}
-                            <i class="fas fa-folder text-warning"></i>
-                            <a href="{{ url_for('file_manager.browse', path=item.path.replace('\\', '/')) }}"
-                                class="text-light ml-2">
-                                {{ item.name }}
-                            </a>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-folder text-warning" style="font-size: 1.2em; width: 24px;"></i>
+                                <a href="{{ url_for('file_manager.browse', path=item.path.replace('\\', '/')) }}"
+                                    class="text-light ml-2 folder-link">
+                                    {{ item.name }}
+                                </a>
+                            </div>
                             {% endif %}
                         </td>
                         <td style="vertical-align: middle;">{{ 'File' if item.is_file else 'Folder' }}</td>
                         <td style="vertical-align: middle;">{{ item.size | filesizeformat if item.is_file else '-' }}
                         </td>
                         <td style="vertical-align: middle;" title="{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}">
-                            <span class="relative-time" data-timestamp="{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                            <span class="relative-time"
+                                data-timestamp="{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}">{{
+                                item.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                         </td>
                         <td style="vertical-align: middle;">
                             <div class="btn-group" style="width: 100%;">
                                 {% if item.is_file %}
                                 <a href="{{ url_for('file_manager.download_file', path=item.path.replace('\\', '/')) }}"
-                                    class="btn btn-sm landing-btn" title="Download" style="border-radius: 10px;">
+                                    class="btn btn-sm landing-btn" title="Download"
+                                    style="border-radius: 10px; padding: 8px 16px; min-width: 40px; width: 46px;">
                                     <i class="fas fa-download"></i>
                                 </a>
                                 {% endif %}
                                 <button class="btn btn-sm landing-btn" type="button" data-toggle="dropdown"
-                                    style="margin-left: 2px; border-radius: 10px;">
+                                    style="margin-left: 3px; border-radius: 10px; padding: 8px 16px; min-width: 40px; width: 46px;">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
-                                <div class="dropdown-menu dropdown-menu-right">
-                                    <a class="dropdown-item" href="#"
-                                        onclick="copyItem('{{ item.id if item.is_file else item.folder_id }}', '{{ item.path.replace('\\', '/') }}', {{ 'true' if item.is_file else 'false' }})">
-                                        <i class="fas fa-copy"></i> Copy
+                                <div class="dropdown-menu dropdown-menu-right"
+                                    style="background: #2d3748; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-radius: 10px; padding: 0.5rem 0;">
+                                    <a class="dropdown-item text-light" href="#"
+                                        onclick="copyItem('{{ item.id if item.is_file else item.folder_id }}', '{{ item.path.replace('\\', '/') }}', {{ 'true' if item.is_file else 'false' }})"
+                                        style="padding: 0.5rem 1.5rem; transition: all 0.2s ease;">
+                                        <i class="fas fa-copy mr-2"></i> Copy
                                     </a>
-                                    <a class="dropdown-item" href="#"
-                                        onclick="moveItem('{{ item.id if item.is_file else item.folder_id }}', '{{ item.path.replace('\\', '/') }}', {{ 'true' if item.is_file else 'false' }})">
-                                        <i class="fas fa-cut"></i> Move
+                                    <a class="dropdown-item text-light" href="#"
+                                        onclick="moveItem('{{ item.id if item.is_file else item.folder_id }}', '{{ item.path.replace('\\', '/') }}', {{ 'true' if item.is_file else 'false' }})"
+                                        style="padding: 0.5rem 1.5rem; transition: all 0.2s ease;">
+                                        <i class="fas fa-cut mr-2"></i> Move
                                     </a>
-                                    <a class="dropdown-item" href="#"
-                                        onclick="shareItem('{{ item.id if item.is_file else item.folder_id }}', '{{ item.path.replace('\\', '/') }}', {{ 'true' if item.is_file else 'false' }})">
-                                        <i class="fas fa-share-alt"></i> Share
+                                    <a class="dropdown-item text-light" href="#"
+                                        onclick="shareItem('{{ item.id if item.is_file else item.folder_id }}', '{{ item.path.replace('\\', '/') }}', {{ 'true' if item.is_file else 'false' }})"
+                                        style="padding: 0.5rem 1.5rem; transition: all 0.2s ease;">
+                                        <i class="fas fa-share-alt mr-2"></i> Share
                                     </a>
-                                    <div class="dropdown-divider"></div>
+                                    <div class="dropdown-divider" style="border-color: #4a5568;"></div>
                                     <a class="dropdown-item text-danger" href="#"
-                                        onclick="deleteItem('{{ item.path.replace('\\', '/') }}', {{ 'true' if item.is_file else 'false' }})">
-                                        <i class="fas fa-trash"></i> Delete
+                                        onclick="deleteItem('{{ item.path.replace('\\', '/') }}', {{ 'true' if item.is_file else 'false' }})"
+                                        style="padding: 0.5rem 1.5rem; transition: all 0.2s ease;">
+                                        <i class="fas fa-trash mr-2"></i> Delete
                                     </a>
                                 </div>
                             </div>

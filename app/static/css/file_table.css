@@ -1,0 +1,158 @@
+/* File Table Component Styles */
+
+/* Breadcrumb styles */
+.breadcrumb {
+  background: #1a202c;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.breadcrumb:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  color: #a0aec0;
+}
+
+/* Landing box styles */
+.landing-box {
+  padding: 2rem;
+  margin-top: 1rem;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Search input styles */
+.search-container .form-control {
+  background: #1a202c;
+  border: 2px solid #4a5568;
+  color: white;
+  border-radius: 10px 0 0 10px;
+  padding: 10px 15px;
+  transition: all 0.3s ease;
+}
+
+.search-container .input-group-text {
+  background: #4299e1;
+  border-color: #4299e1;
+  border-radius: 0 10px 10px 0;
+}
+
+/* Table styles */
+.table-dark {
+  background: #1a202c;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-collapse: collapse;
+  border: none;
+}
+
+.table-dark thead tr {
+  background: #3a4a63;
+  border: none;
+  position: relative;
+  z-index: 1;
+}
+
+.table-dark th {
+  border: none;
+  padding: 15px;
+  color: #ffffff;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.table-dark th:nth-child(2) {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.th-checkbox,
+.table-dark th:first-child {
+  width: 40px;
+  text-align: center;
+  vertical-align: middle;
+  padding: 15px 10px;
+}
+
+.table-dark th:last-child {
+  width: 160px;
+  min-width: 160px;
+}
+
+.table-dark tbody tr {
+  border-color: #2d3748;
+  transition: all 0.2s ease;
+}
+
+/* File row styles */
+.file-row:hover {
+  background-color: #2d3748 !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.file-link:hover,
+.folder-link:hover {
+  color: #4299e1 !important;
+  text-decoration: none;
+  transform: translateX(3px);
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.custom-control-input:checked ~ .custom-control-label::before {
+  background-color: #4299e1;
+  border-color: #4299e1;
+}
+
+/* Icon styles */
+.fas.fa-file {
+  color: #63b3ed;
+  transition: all 0.2s ease;
+}
+
+.fas.fa-folder {
+  color: #ecc94b;
+  transition: all 0.2s ease;
+}
+
+.file-row:hover .fas.fa-file,
+.file-row:hover .fas.fa-folder {
+  transform: scale(1.2);
+}
+
+/* Button styles */
+.landing-btn {
+  transition: all 0.3s ease;
+}
+
+.landing-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Checkbox styles */
+.custom-control-label {
+  cursor: pointer;
+}
+
+/* Vertical alignment */
+td {
+  vertical-align: middle;
+  padding: 12px 15px;
+}
+
+/* Ensure table rows fill the entire width */
+.table-dark tbody tr td {
+  border-top: 1px solid #2d3748;
+}
+
+.table-dark tbody tr:hover td {
+  background-color: #2d3748;
+}
