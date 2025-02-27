@@ -11,6 +11,7 @@ from sqlalchemy import func
 import zipfile
 import tempfile
 import json
+from app.utils.filesystem import check_user_quota
 
 file_manager = Blueprint('file_manager', __name__)
 
@@ -114,6 +115,13 @@ def upload(path):
         files = request.files.getlist('file')
         for file in files:
             if file.filename:
+                # Check file size against quota
+                file_size = len(file.read())
+                file.seek(0)  # Reset file pointer after reading
+                
+                if not check_user_quota(user_id, file_size):
+                    flash('Storage quota exceeded')
+                    return redirect(url_for('file_manager.browse', path=path))
                 relative_path = file.filename.replace('\\', '/')
                 secure_path = '/'.join(secure_filename(part) for part in relative_path.split('/'))
                 file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], user.username, path, secure_path)
@@ -446,4 +454,4 @@ def bulk_download():
         as_attachment=True,
         download_name=zip_filename,
         mimetype='application/zip'
-    ) 
+    )

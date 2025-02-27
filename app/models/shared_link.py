@@ -7,7 +7,7 @@ class SharedLink(db.Model):
     token = db.Column(db.String(64), unique=True, nullable=False)
     file_id = db.Column(db.Integer, db.ForeignKey('file.id'), nullable=True)
     folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=True)
-    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     expires_at = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=True)

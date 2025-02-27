@@ -72,7 +72,7 @@ def initialize_roles_and_users(app):
         if not User.query.filter_by(username='admin').first():
             password = 'twm420'
             hashed_password = generate_password_hash(password)
-            admin = User(username='admin', password=hashed_password, role_id=admin_role.id)
+            admin = User(username='admin', password=hashed_password, role_id=admin_role.id, storage_quota=None)  # Unlimited storage for admin
             db.session.add(admin)
             db.session.commit()
             logging.info("Admin user created")
@@ -91,7 +91,7 @@ def initialize_roles_and_users(app):
         if not User.query.filter_by(username='Louis').first():
             password = '123'
             hashed_password = generate_password_hash(password)
-            louis = User(username='Louis', password=hashed_password, role_id=user_role.id)
+            louis = User(username='Louis', password=hashed_password, role_id=user_role.id, storage_quota=5 * 1024 * 1024 * 1024)  # 5GB storage quota
             db.session.add(louis)
             db.session.commit()
             logging.info("Louis user created")
