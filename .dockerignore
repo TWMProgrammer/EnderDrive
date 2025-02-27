@@ -1,9 +1,10 @@
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.db
+.pytest_cache/
 instance/
 uploads/
 .venv/
 .vscode/
+*.pyc
+*.pyo
+*.pyd
+*.db
