@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from app import db
 
 class User(db.Model):
@@ -8,5 +8,5 @@ class User(db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.now())
+    created_at = db.Column(db.DateTime, default=datetime.now(UTC))
     storage_quota = db.Column(db.BigInteger, nullable=True)  # Can be null for unlimited storage

@@ -10,7 +10,7 @@ from app.utils.decorators import admin_required
 from app.utils.filesystem import ensure_user_folder, delete_user_folder
 import psutil
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 admin = Blueprint('admin', __name__)
 
@@ -38,7 +38,7 @@ def admin_dashboard():
     recent_logs = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(10).all()
     
     # Active sessions in last 24 hours
-    yesterday = datetime.utcnow() - timedelta(days=1)
+    yesterday = datetime.now(UTC) - timedelta(days=1)
     active_sessions = ActivityLog.query.filter(
         ActivityLog.timestamp >= yesterday,
         ActivityLog.action == 'login'

@@ -16,11 +16,11 @@ def test_user(app):
         user_role = Role.query.filter_by(name='user').first()
         if not user_role:
             user_role = Role(name='user', description='Regular User')
-            db = app.extensions['sqlalchemy'].db
+            db = app.extensions['sqlalchemy']
             db.session.add(user_role)
             db.session.commit()
         user = User(username='fileuser', password=password, role_id=user_role.id, storage_quota=1024*1024*10)  # 10MB quota
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(user)
         db.session.commit()
         
@@ -48,7 +48,8 @@ def test_folder_creation(authenticated_client, app, test_user):
     """Test creating a new folder"""
     # First ensure the user folder exists
     with app.app_context():
-        user = User.query.get(test_user)
+        db = app.extensions['sqlalchemy']
+        user = db.session.get(User, test_user)
         user_folder = os.path.join(app.config['UPLOAD_FOLDER'], user.username)
         if not os.path.exists(user_folder):
             os.makedirs(user_folder)
@@ -63,7 +64,8 @@ def test_folder_creation(authenticated_client, app, test_user):
     # Verify folder was created in database
     with app.app_context():
         # First check if the folder exists in the filesystem
-        user = User.query.get(test_user)
+        db = app.extensions['sqlalchemy']
+        user = db.session.get(User, test_user)
         folder_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, 'Test Folder')
         
         # Create the folder if it doesn't exist (this is what the application would do)
@@ -93,7 +95,7 @@ def test_folder_creation(authenticated_client, app, test_user):
         # If folder still doesn't exist in database, create it (simulating what the app would do)
         if folder is None:
             folder = Folder(name='Test Folder', owner_id=test_user)
-            db = app.extensions['sqlalchemy'].db
+            db = app.extensions['sqlalchemy']
             db.session.add(folder)
             db.session.commit()
         
@@ -122,10 +124,10 @@ def test_file_upload(authenticated_client, app, test_user):
         assert file is not None
         
         # Check if file exists in the filesystem - use username instead of user ID
-        user = User.query.get(test_user)
+        db = app.extensions['sqlalchemy']
+        user = db.session.get(User, test_user)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, file.name)
         assert os.path.exists(file_path)
-
 
 def test_file_download(authenticated_client, app, test_user):
     """Test downloading a file"""
@@ -150,7 +152,6 @@ def test_file_download(authenticated_client, app, test_user):
         response = authenticated_client.get(f'/browse/download/download.txt')
         assert response.status_code == 200
         assert response.data == b'test download content'
-
 
 def test_file_deletion(authenticated_client, app, test_user):
     """Test deleting a file"""

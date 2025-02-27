@@ -18,7 +18,7 @@ def test_users(app):
         user_role = Role.query.filter_by(name='user').first()
         if not user_role:
             user_role = Role(name='user', description='Regular User')
-            db = app.extensions['sqlalchemy'].db
+            db = app.extensions['sqlalchemy']
             db.session.add(user_role)
             db.session.commit()
         
@@ -29,7 +29,7 @@ def test_users(app):
         # Create recipient user
         recipient = User(username='recipient', password=password, role_id=user_role.id)
         
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(owner)
         db.session.add(recipient)
         db.session.commit()
@@ -74,14 +74,14 @@ def test_file(app, test_users):
         )
         
         # Save file to database
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(file)
         db.session.commit()
         
         # Create the actual file in the filesystem
         import os
         # Get the owner's username
-        owner = User.query.get(test_users['owner_id'])
+        owner = db.session.get(User, test_users['owner_id'])
         file_dir = os.path.join(app.config['UPLOAD_FOLDER'], owner.username)
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
@@ -119,7 +119,7 @@ def test_access_shared_file(client, app, test_users, test_file):
             created_by=test_users['owner_id'],
             name='Test Share'
         )
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(share_link)
         db.session.commit()
         
@@ -139,7 +139,7 @@ def test_download_shared_file(client, app, test_users, test_file):
             created_by=test_users['owner_id'],
             name='Test Share'
         )
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(share_link)
         db.session.commit()
         
@@ -161,13 +161,13 @@ def test_share_folder(owner_client, app, test_users):
             name='Shared Folder',
             owner_id=test_users['owner_id']
         )
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(folder)
         db.session.commit()
         
         # Create the actual folder in the filesystem
         import os
-        owner = User.query.get(test_users['owner_id'])
+        owner = db.session.get(User, test_users['owner_id'])
         folder_dir = os.path.join(app.config['UPLOAD_FOLDER'], owner.username, 'Shared Folder')
         if not os.path.exists(folder_dir):
             os.makedirs(folder_dir)

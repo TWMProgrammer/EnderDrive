@@ -36,13 +36,13 @@ def test_login_logout(client, app):
         user_role = Role.query.filter_by(name='user').first()
         if not user_role:
             user_role = Role(name='user', description='Regular User')
-            db = app.extensions['sqlalchemy'].db
+            db = app.extensions['sqlalchemy']
             db.session.add(user_role)
             db.session.commit()
             
         password = generate_password_hash('Password123!', method='pbkdf2')
         user = User(username='testuser', password=password, role_id=user_role.id)
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(user)
         db.session.commit()
     
@@ -83,13 +83,13 @@ def test_login_invalid_credentials(client, app):
         user_role = Role.query.filter_by(name='user').first()
         if not user_role:
             user_role = Role(name='user', description='Regular User')
-            db = app.extensions['sqlalchemy'].db
+            db = app.extensions['sqlalchemy']
             db.session.add(user_role)
             db.session.commit()
             
         password = generate_password_hash('Password123!', method='pbkdf2')
         user = User(username='testuser', password=password, role_id=user_role.id)
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(user)
         db.session.commit()
     
@@ -121,13 +121,13 @@ def test_profile_view(client, app):
         user_role = Role.query.filter_by(name='user').first()
         if not user_role:
             user_role = Role(name='user', description='Regular User')
-            db = app.extensions['sqlalchemy'].db
+            db = app.extensions['sqlalchemy']
             db.session.add(user_role)
             db.session.commit()
             
         password = generate_password_hash('Password123!', method='pbkdf2')
         user = User(username='testuser', password=password, role_id=user_role.id, storage_quota=1073741824)  # 1GB
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(user)
         db.session.commit()
         
@@ -162,13 +162,13 @@ def test_update_profile(client, app):
         user_role = Role.query.filter_by(name='user').first()
         if not user_role:
             user_role = Role(name='user', description='Regular User')
-            db = app.extensions['sqlalchemy'].db
+            db = app.extensions['sqlalchemy']
             db.session.add(user_role)
             db.session.commit()
             
         password = generate_password_hash('Password123!', method='pbkdf2')
         user = User(username='testuser', password=password, role_id=user_role.id)
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(user)
         db.session.commit()
         user_id = user.id
@@ -212,7 +212,7 @@ def test_update_profile(client, app):
         assert b'Profile updated successfully' in response.data
         
         # Verify username was updated in database
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         assert user.username == 'updateduser'
         
         # Test successful password update
@@ -225,5 +225,5 @@ def test_update_profile(client, app):
         assert b'Profile updated successfully' in response.data
         
         # Verify password was updated in database
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         assert check_password_hash(user.password, 'NewPassword123!')

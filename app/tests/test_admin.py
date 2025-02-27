@@ -12,14 +12,14 @@ def admin_user(app):
         admin_role = Role.query.filter_by(name='admin').first()
         if not admin_role:
             admin_role = Role(name='admin', description='Administrator')
-            db = app.extensions['sqlalchemy'].db
+            db = app.extensions['sqlalchemy']
             db.session.add(admin_role)
             db.session.commit()
         
         # Create admin user
         password = generate_password_hash('AdminPass123!', method='pbkdf2')
         admin = User(username='adminuser', password=password, role_id=admin_role.id)
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(admin)
         db.session.commit()
         return admin
@@ -55,7 +55,7 @@ def test_regular_user_cannot_access_admin(client, app):
             
         password = generate_password_hash('UserPass123!', method='pbkdf2')
         user = User(username='regularuser', password=password, role_id=user_role.id)
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(user)
         db.session.commit()
     
@@ -79,7 +79,7 @@ def test_user_management(admin_client, app):
         user_role = Role.query.filter_by(name='user').first()
         password = generate_password_hash('ManagedPass123!', method='pbkdf2')
         test_user = User(username='testmanaged', password=password, role_id=user_role.id)
-        db = app.extensions['sqlalchemy'].db
+        db = app.extensions['sqlalchemy']
         db.session.add(test_user)
         db.session.commit()
         user_id = test_user.id

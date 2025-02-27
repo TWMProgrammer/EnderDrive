@@ -13,7 +13,7 @@ def get_user_storage_usage(user_id):
 
 def check_user_quota(user_id, required_space=0):
     """Check if user has enough quota for required space"""
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return False
     
