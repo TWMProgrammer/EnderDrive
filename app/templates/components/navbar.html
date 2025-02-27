@@ -20,11 +20,19 @@
         <button class="btn landing-btn ml-2" data-toggle="modal" data-target="#folderModal">
             <i class="fas fa-folder-plus"></i> New Folder
         </button>
-        <a href="{{ url_for('auth.profile') }}" class="btn landing-btn ml-2">
-            <i class="fas fa-user-cog"></i> Profile
-        </a>
-        <a href="{{ url_for('auth.logout') }}" class="btn landing-btn register-btn ml-2">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
+        <div class="dropdown ml-2">
+            <button class="btn landing-btn dropdown-toggle" type="button" id="userMenuDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-user"></i> My Account
+            </button>
+            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userMenuDropdown">
+                <a class="dropdown-item text-light" href="{{ url_for('auth.profile') }}">
+                    <i class="fas fa-user-cog"></i> Profile
+                </a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item text-light" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
     </div>
 </nav>
