@@ -1,6 +1,6 @@
 # EnderDrive
 
-Just a very basic implementation of a Google-Drive or HFS-like application written in python. It is designed to run on Linux and Windows.
+Just a very basic implementation of a Google-Drive or HFS-like application written in python.
 
 ## Project Description
 
@@ -54,6 +54,8 @@ EnderDrive is a secure cloud storage solution that allows users to store, share,
 - SQLAlchemy ORM for database management
 - Flask-SQLAlchemy for database integration
 - Werkzeug for security utilities
+- Gunicorn WSGI server (Linux)
+- Waitress WSGI server (Windows)
 
 ### Frontend
 
@@ -121,13 +123,55 @@ volumes:
 
 The application includes separate configurations for development and production environments:
 
-- Development server: `run_debug.py`
-- Production server: `run_production.py`
+- Development server: `run_debug.py` - Uses Flask's built-in development server
+- Production server: `run_production.py` - Uses Gunicorn on Linux and Waitress on Windows
 
-**Note:** While Waitress is not included in the base requirements, the code includes support for running on Windows using Waitress. To use Waitress on Windows, simply install it using:
+### System Requirements
+
+- Python 3.9 or higher
+- Dependencies listed in requirements.txt
+
+### Default User Accounts
+
+The system initializes with two default accounts:
+
+- Admin user:
+
+  - Username: `admin`
+  - Password: `twm420`
+  - Role: Administrator with full access
+  - Storage: Unlimited
+
+- Regular user:
+  - Username: `Louis`
+  - Password: `123`
+  - Role: Standard user
+  - Storage: 5GB quota
+
+**Note:** For security reasons, it's recommended to change these default passwords after initial setup.
+
+### Running in Development Mode
 
 ```bash
-pip install waitress
+python run_debug.py
+```
+
+### Running in Production Mode
+
+```bash
+python run_production.py
+```
+
+The production server automatically detects your operating system and uses:
+
+- **Linux:** Gunicorn with 4 workers (configurable via WORKERS environment variable)
+- **Windows:** Waitress WSGI server (included in requirements.txt)
+
+You can configure the host and port using environment variables:
+
+```bash
+# Example: Custom host and port
+HOST=0.0.0.0 PORT=8080 python run_production.py
 ```
 
 ## Project Structure
@@ -135,8 +179,30 @@ pip install waitress
 ```txt
 app/
 ├── controllers/     # Route handlers and business logic
+│   ├── admin.py     # Admin dashboard functionality
+│   ├── auth.py      # Authentication and user management
+│   ├── file_manager.py # File operations and management
+│   └── sharing.py   # File sharing functionality
 ├── models/          # Database models
+│   ├── activity_log.py # User activity tracking
+│   ├── file.py      # File metadata model
+│   ├── folder.py    # Folder structure model
+│   ├── role.py      # User roles and permissions
+│   ├── shared_link.py # Sharing functionality
+│   └── user.py      # User account management
 ├── static/          # Static assets (CSS, JS)
 ├── templates/       # Jinja2 HTML templates
 └── utils/           # Utility functions and helpers
+    ├── decorators.py # Access control decorators
+    └── filesystem.py # File system operations
 ```
+
+## Environment Variables
+
+The application supports the following environment variables:
+
+- `HOST`: The host address to bind to (default: 0.0.0.0 on Linux, 127.0.0.1 on Windows)
+- `PORT`: The port to listen on (default: 5000)
+- `WORKERS`: Number of worker processes for Gunicorn (default: 4)
+- `FLASK_ENV`: Environment type (development/production)
+- `FLASK_DEBUG`: Enable/disable debug mode
