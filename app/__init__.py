@@ -16,11 +16,13 @@ def create_app(config_class=Config):
     from app.controllers.admin import admin
     from app.controllers.file_manager import file_manager
     from app.controllers.sharing import sharing
+    from app.controllers.favicon import favicon
 
     app.register_blueprint(auth)
     app.register_blueprint(admin)
     app.register_blueprint(file_manager)
     app.register_blueprint(sharing)
+    app.register_blueprint(favicon)
 
     # Create uploads folder if it doesn't exist
     if not os.path.exists(app.config['UPLOAD_FOLDER']):

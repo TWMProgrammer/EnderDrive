@@ -19,6 +19,10 @@ EnderDrive is a secure cloud storage solution that allows users to store, share,
   - Secure file browsing in personal space
   - File and folder upload/download capabilities
   - Bulk file operations
+    - Multi-file selection and manipulation
+    - Batch delete, move, and copy operations
+    - Mass file sharing capabilities
+    - Efficient handling of large file sets
   - File type detection and validation
   - Hierarchical folder structure
 
