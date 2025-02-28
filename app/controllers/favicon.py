@@ -11,12 +11,3 @@ def serve_favicon():
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )
-
-@favicon.route('/favicon.png')
-def serve_favicon_png():
-    """Serve the favicon.png file from the static folder"""
-    return send_from_directory(
-        os.path.join(current_app.root_path, 'static'),
-        'favicon.png',
-        mimetype='image/png'
-    )
