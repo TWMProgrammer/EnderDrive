@@ -1,4 +1,5 @@
-from datetime import datetime, UTC
+from datetime import datetime
+from datetime import timezone
 from app import db
 
 class ActivityLog(db.Model):
@@ -9,7 +10,7 @@ class ActivityLog(db.Model):
     action = db.Column(db.String(100), nullable=False)
     details = db.Column(db.Text)
     ip_address = db.Column(db.String(45))
-    timestamp = db.Column(db.DateTime, default=datetime.now(UTC))
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     
     user = db.relationship('User', backref=db.backref('activity_logs', lazy=True))
     
