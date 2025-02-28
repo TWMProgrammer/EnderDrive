@@ -2,8 +2,10 @@ __pycache__/
 .pytest_cache/
 instance/
 uploads/
+app/tests/
 .venv/
 .vscode/
+pytest.ini
 *.pyc
 *.pyo
 *.pyd

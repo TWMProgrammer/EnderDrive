@@ -87,7 +87,7 @@ docker run -d \
   -p 5000:5000 \
   -v enderdrive_instance:/app/instance \
   -v enderdrive_uploads:/app/uploads \
-  ghcr.io/twm420k/enderdrive:main
+  ghcr.io/twmprogrammer/enderdrive:main
 ```
 
 ## Quick Start with Docker Compose
@@ -97,7 +97,7 @@ version: "3.8"
 
 services:
   enderdrive:
-    image: ghcr.io/twm420k/enderdrive:main
+    image: ghcr.io/twmprogrammer/enderdrive:main
     container_name: enderdrive
     ports:
       - "5000:5000"
