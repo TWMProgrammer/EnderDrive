@@ -160,6 +160,144 @@ def test_download_shared_file(client, app, test_users, test_file):
         db = app.extensions['sqlalchemy']
         db.session.add(share_link)
         db.session.commit()
+
+
+def test_share_nonexistent_file(owner_client, app, test_users):
+    """Test sharing a file that doesn't exist"""
+    response = owner_client.post('/share/file/99999', data={
+        'name': 'Invalid Share',
+        'description': 'This file does not exist',
+        'expires_in': 7
+    }, follow_redirects=True)
+    
+    assert response.status_code == 404
+
+
+def test_modify_share_link(owner_client, app, test_users, test_file):
+    """Test modifying an existing share link"""
+    # First create a share link through the API
+    response = owner_client.post(f'/share/file/{test_file.id}', data={
+        'name': 'Original Share',
+        'description': 'Original description',
+        'expires_in': 7
+    }, follow_redirects=True)
+    
+    assert response.status_code == 200
+    response_data = response.get_json()
+    assert response_data['status'] == 'success'
+    
+    # Extract token from share link URL
+    share_url = response_data['share_link']
+    token = share_url.split('/')[-1]
+    
+    # Test modifying the share link
+    response = owner_client.put(f'/api/shares/{token}', json={
+        'name': 'Updated Share',
+        'description': 'Updated description',
+        'expires_in': 14
+    }, follow_redirects=True)
+    
+    assert response.status_code == 200
+    
+    # Verify the changes in database
+    with app.app_context():
+        updated_link = SharedLink.query.filter_by(token=token).first()
+        assert updated_link.name == 'Updated Share'
+
+
+def test_delete_share_link(owner_client, app, test_users, test_file):
+    """Test deleting a share link"""
+    # First create a share link through the API
+    response = owner_client.post(f'/share/file/{test_file.id}', data={
+        'name': 'Share to Delete',
+        'description': 'This share will be deleted',
+        'expires_in': 7
+    }, follow_redirects=True)
+    
+    assert response.status_code == 200
+    response_data = response.get_json()
+    assert response_data['status'] == 'success'
+    
+    # Extract token from share link URL
+    share_url = response_data['share_link']
+    token = share_url.split('/')[-1]
+    
+    # Test deleting the share link
+    response = owner_client.post(f'/share/delete/{token}', follow_redirects=True)
+    assert response.status_code == 200
+    
+    # Verify the link is deleted from database
+    with app.app_context():
+        deleted_link = SharedLink.query.filter_by(token=token).first()
+        assert deleted_link is None
+
+
+def test_unauthorized_share_access(recipient_client, app, test_users, test_file):
+    """Test accessing a file share with password protection"""
+    with app.app_context():
+        # Create a share link with password protection
+        share_link = SharedLink(
+            file_id=test_file.id,
+            created_by=test_users['owner_id'],
+            name='Protected Share',
+            password='secret'  # Protected with password
+        )
+        db = app.extensions['sqlalchemy']
+        db.session.add(share_link)
+        db.session.commit()
+        
+        # Test accessing without password should show password prompt
+        response = recipient_client.get(f'/shared/{share_link.token}')
+        assert response.status_code == 200
+        assert b'Password Protected Share' in response.data
+
+        # Test with incorrect password
+        response = recipient_client.post('/share/verify-password', data={
+            'token': share_link.token,
+            'password': 'wrong_password'
+        })
+        assert response.status_code == 200
+        response_data = response.get_json()
+        assert response_data['status'] == 'error'
+        assert 'Incorrect password' in response_data['message']
+
+        # Test with correct password
+        response = recipient_client.post('/share/verify-password', data={
+            'token': share_link.token,
+            'password': 'secret'
+        })
+        assert response.status_code == 200
+        response_data = response.get_json()
+        assert response_data['status'] == 'success'
+
+        # Test accessing after correct password verification
+        response = recipient_client.get(f'/shared/{share_link.token}')
+        assert response.status_code == 200
+        assert b'needs_password' not in response.data
+
+
+def test_concurrent_share_access(client, app, test_users, test_file):
+    """Test concurrent access to shared files"""
+    with app.app_context():
+        # Create a share link that expires quickly
+        from datetime import datetime, timedelta
+        share_link = SharedLink(
+            file_id=test_file.id,
+            created_by=test_users['owner_id'],
+            name='Limited Share',
+            expires_at=datetime.now() + timedelta(seconds=1)  # Expires after 1 second
+        )
+        db = app.extensions['sqlalchemy']
+        db.session.add(share_link)
+        db.session.commit()
+        
+        # First access should succeed
+        response1 = client.get(f'/shared/{share_link.token}')
+        assert response1.status_code == 200
+        
+        # Second access should also succeed as concurrent access limit is not implemented
+        response2 = client.get(f'/shared/{share_link.token}')
+        assert response2.status_code == 200
         
         # Access the shared file first to establish the session
         client.get(f'/shared/{share_link.token}')
@@ -169,6 +307,151 @@ def test_download_shared_file(client, app, test_users, test_file):
         
         assert response.status_code == 200
         assert response.data == b'This is a test file for sharing'
+
+
+def test_share_folder_with_files(owner_client, app, test_users):
+    """Test sharing a folder containing files"""
+    import os
+    with app.app_context():
+        # Create a folder
+        folder = Folder(
+            name='Test Folder',
+            owner_id=test_users['owner_id']
+        )
+        db = app.extensions['sqlalchemy']
+        db.session.add(folder)
+        db.session.commit()
+        
+        # Create a file in the database
+        file = File(
+            name=os.path.join(folder.name, 'test_file.txt'),  # Include folder name in the file path
+            size=100,
+            owner_id=test_users['owner_id']
+        )
+        db.session.add(file)
+        db.session.commit()
+        
+        # Create the actual folder and file in the filesystem
+        owner = db.session.get(User, test_users['owner_id'])
+        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], owner.username, folder.name)
+        os.makedirs(folder_path, exist_ok=True)
+        
+        file_path = os.path.join(folder_path, 'test_file.txt')  # Keep the simple filename for filesystem
+        with open(file_path, 'wb') as f:
+            f.write(b'Test file in shared folder')
+        
+        # Share the folder
+        response = owner_client.post(f'/share/folder/{folder.id}', data={
+            'name': 'Folder Share',
+            'description': 'Sharing folder with files',
+            'expires_in': 7
+        }, follow_redirects=True)
+        
+        assert response.status_code == 200
+        
+        # Verify share link was created
+        share_link = SharedLink.query.filter_by(folder_id=folder.id).first()
+        assert share_link is not None
+        
+        # Test accessing the shared folder
+        response = owner_client.get(f'/shared/{share_link.token}')
+        assert response.status_code == 200
+        assert b'test_file.txt' in response.data
+
+
+def test_share_nested_folder(owner_client, app, test_users):
+    """Test sharing a nested folder structure"""
+    with app.app_context():
+        # Create parent folder
+        parent_folder = Folder(
+            name='Parent Folder',
+            owner_id=test_users['owner_id']
+        )
+        db = app.extensions['sqlalchemy']
+        db.session.add(parent_folder)
+        db.session.commit()
+        
+        # Create child folder
+        child_folder = Folder(
+            name='Child Folder',
+            owner_id=test_users['owner_id'],
+            parent_id=parent_folder.id
+        )
+        db.session.add(child_folder)
+        db.session.commit()
+        
+        # Create the folder structure in filesystem
+        import os
+        owner = db.session.get(User, test_users['owner_id'])
+        parent_path = os.path.join(app.config['UPLOAD_FOLDER'], owner.username, parent_folder.name)
+        child_path = os.path.join(parent_path, child_folder.name)
+        os.makedirs(child_path, exist_ok=True)
+        
+        # Share the parent folder
+        response = owner_client.post(f'/share/folder/{parent_folder.id}', data={
+            'name': 'Nested Folder Share',
+            'description': 'Sharing nested folders',
+            'expires_in': 7
+        }, follow_redirects=True)
+        
+        assert response.status_code == 200
+        
+        # Verify share link
+        share_link = SharedLink.query.filter_by(folder_id=parent_folder.id).first()
+        assert share_link is not None
+        
+        # Test accessing the shared folder structure
+        response = owner_client.get(f'/shared/{share_link.token}')
+        assert response.status_code == 200
+        assert b'Child Folder' in response.data
+
+
+def test_share_empty_folder(owner_client, app, test_users):
+    """Test sharing an empty folder"""
+    with app.app_context():
+        # Create an empty folder
+        folder = Folder(
+            name='Empty Folder',
+            owner_id=test_users['owner_id']
+        )
+        db = app.extensions['sqlalchemy']
+        db.session.add(folder)
+        db.session.commit()
+        
+        # Create the folder in filesystem
+        import os
+        owner = db.session.get(User, test_users['owner_id'])
+        folder_path = os.path.join(app.config['UPLOAD_FOLDER'], owner.username, folder.name)
+        os.makedirs(folder_path, exist_ok=True)
+        
+        # Share the empty folder
+        response = owner_client.post(f'/share/folder/{folder.id}', data={
+            'name': 'Empty Folder Share',
+            'description': 'Sharing an empty folder',
+            'expires_in': 7
+        }, follow_redirects=True)
+        
+        assert response.status_code == 200
+        
+        # Verify share link was created
+        share_link = SharedLink.query.filter_by(folder_id=folder.id).first()
+        assert share_link is not None
+        
+        # Test accessing the empty shared folder
+        response = owner_client.get(f'/shared/{share_link.token}')
+        assert response.status_code == 200
+        assert b'Empty Folder' in response.data
+        
+
+def test_share_nonexistent_folder(owner_client, app, test_users):
+    """Test sharing a folder that doesn't exist"""
+    response = owner_client.post('/share/folder/99999', data={
+        'name': 'Invalid Folder Share',
+        'description': 'This folder does not exist',
+        'expires_in': 7
+    }, follow_redirects=True)
+    
+    assert response.status_code == 404
 
 
 def test_share_folder(owner_client, app, test_users):
