@@ -249,8 +249,21 @@ def view_shared(token, subpath=''):
     # URL decode and normalize path separators to forward slashes
     subpath = subpath.replace('%5C', '/').replace('%5c', '/').replace('\\', '/')
     share = SharedLink.query.filter_by(token=token).first()
-    if not share or not share.is_valid:
-        abort(404)
+    
+    if not share:
+        flash('Share link not found', 'error')
+        return render_template('shared_view.html', error='Share link not found', share=None), 404
+    
+    if not share.is_valid:
+        flash('Share link has expired')
+        return render_template('shared_view.html', 
+                             error='Share link has expired', 
+                             share=share, 
+                             items=[], 
+                             breadcrumbs=[], 
+                             current_folder='', 
+                             is_bulk_share=False,
+                             error_message='Share link has expired'), 404
         
     if share.password and not session.get(f'share_verified_{token}'):
         # Instead of redirecting to password prompt page, render the view with a flag

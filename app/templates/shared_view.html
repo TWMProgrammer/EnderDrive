@@ -28,6 +28,18 @@
     {% endif %}
   </nav>
 
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="container mt-3">
+          <div class="alert alert-danger" role="alert">
+            {{ message }}
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
   <div class="container mt-4">
     {% if needs_password %}
     <div class="card shared-card">
@@ -56,7 +68,7 @@
         {% endif %}
       </div>
       <div class="card-body">
-        {% if not is_bulk_share %}
+        {% if not is_bulk_share and item is defined %}
         <div class="card mb-4 shared-inner-card">
           <div class="card-body">
             <h5 class="text-light">{{ item.name }}</h5>

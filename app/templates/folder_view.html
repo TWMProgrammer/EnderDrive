@@ -16,6 +16,18 @@
 <body style="background: linear-gradient(135deg, #1a1c2c 0%, #2d3748 100%); min-height: 100vh;">
     {% include 'components/navbar.html' %}
 
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="container mt-3">
+        <div class="alert alert-danger" role="alert">
+            {{ message }}
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
     {# Include all modals #}
     {% include 'components/modals/upload_modal.html' %}
     {% include 'components/modals/new_folder_modal.html' %}

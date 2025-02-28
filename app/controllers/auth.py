@@ -25,17 +25,44 @@ def login():
 def register():
     if request.method == 'POST':
         username = request.form['username']
-        password = generate_password_hash(
-            password=request.form['password'],
-            method='pbkdf2'
-        )
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+        
+        # Validate passwords match
+        if password != confirm_password:
+            flash('Passwords do not match', 'error')
+            return render_template('register.html')
+            
+        # Validate username format
+        if not username.isalnum():
+            flash('Username can only contain letters and numbers', 'error')
+            return render_template('register.html')
+            
+        # Check password length
+        if len(password) < 8:
+            flash('Password must be at least 8 characters', 'error')
+            return render_template('register.html')
+            
+        # Check if username exists
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists', 'error')
+            return render_template('register.html')
+            
+        # Create new user
+        hashed_password = generate_password_hash(password, method='pbkdf2')
         user_role = Role.query.filter_by(name='user').first()
-        new_user = User(username=username, password=password, role_id=user_role.id)
-        db.session.add(new_user)
-        db.session.commit()
-
-        ensure_user_folder(current_app, username)
-        return redirect(url_for('auth.login'))
+        new_user = User(username=username, password=hashed_password, role_id=user_role.id)
+        
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            ensure_user_folder(current_app, username)
+            flash('Registration successful! Please login.', 'success')
+            return redirect(url_for('auth.login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred during registration', 'error')
+            return render_template('register.html')
     return render_template('register.html')
 
 @auth.route('/logout')

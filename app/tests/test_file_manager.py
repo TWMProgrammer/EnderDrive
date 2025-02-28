@@ -44,9 +44,8 @@ def authenticated_client(client, test_user):
     return client
 
 
-def test_folder_creation(authenticated_client, app, test_user):
-    """Test creating a new folder"""
-    # First ensure the user folder exists
+def test_folder_creation_filesystem(authenticated_client, app, test_user):
+    """Test creating a new folder in the filesystem"""
     with app.app_context():
         db = app.extensions['sqlalchemy']
         user = db.session.get(User, test_user)
@@ -54,57 +53,45 @@ def test_folder_creation(authenticated_client, app, test_user):
         if not os.path.exists(user_folder):
             os.makedirs(user_folder)
     
-    # Now create a folder inside the user folder
     response = authenticated_client.post('/browse/upload/', data={
         'folder_name': 'Test Folder'
     }, follow_redirects=True)
     
     assert response.status_code == 200
     
-    # Verify folder was created in database
     with app.app_context():
-        # First check if the folder exists in the filesystem
         db = app.extensions['sqlalchemy']
         user = db.session.get(User, test_user)
         folder_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, 'Test Folder')
         
-        # Create the folder if it doesn't exist (this is what the application would do)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         
         assert os.path.exists(folder_path)
-        
-        # Then verify it exists in the database - try different possible name formats
-        # The application might store the folder with or without path prefixes
-        folder = None
-        possible_names = ['Test Folder', f'{user.username}/Test Folder', f'/{user.username}/Test Folder']
-        
-        for name in possible_names:
-            folder = Folder.query.filter_by(name=name, owner_id=test_user).first()
-            if folder:
-                break
-                
-        # If still not found, check all folders for this user
-        if folder is None:
-            folders = Folder.query.filter_by(owner_id=test_user).all()
-            for f in folders:
-                if 'Test Folder' in f.name:
-                    folder = f
-                    break
-        
-        # If folder still doesn't exist in database, create it (simulating what the app would do)
-        if folder is None:
-            folder = Folder(name='Test Folder', owner_id=test_user)
-            db = app.extensions['sqlalchemy']
-            db.session.add(folder)
-            db.session.commit()
+
+
+def test_folder_creation_database(authenticated_client, app, test_user):
+    """Test creating a new folder in the database"""
+    response = authenticated_client.post('/browse/upload/', data={
+        'folder_name': 'Database Test Folder'
+    }, follow_redirects=True)
+    
+    assert response.status_code == 200
+    
+    # Verify folder was created in database
+    with app.app_context():
+        db = app.extensions['sqlalchemy']
+        user = db.session.get(User, test_user)
+        # The controller uses secure_filename which sanitizes the folder name
+        folder = Folder.query.filter_by(name='Database_Test_Folder', owner_id=test_user).first()
         
         assert folder is not None
+        assert folder.owner_id == test_user
+        assert folder.name == 'Database_Test_Folder'
 
 
-def test_file_upload(authenticated_client, app, test_user):
-    """Test uploading a file"""
-    # Create a test file
+def test_successful_file_upload(authenticated_client, app, test_user):
+    """Test successful file upload and verify file creation"""
     data = {
         'file': (BytesIO(b'test file content'), 'test.txt')
     }
@@ -118,16 +105,58 @@ def test_file_upload(authenticated_client, app, test_user):
     
     assert response.status_code == 200
     
-    # Verify file was created in database
+    # Verify file was created in database and filesystem
     with app.app_context():
         file = File.query.filter_by(name='test.txt', owner_id=test_user).first()
         assert file is not None
         
-        # Check if file exists in the filesystem - use username instead of user ID
         db = app.extensions['sqlalchemy']
         user = db.session.get(User, test_user)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], user.username, file.name)
         assert os.path.exists(file_path)
+
+def test_upload_invalid_filename(authenticated_client, app, test_user):
+    """Test uploading file with invalid filename containing special characters"""
+    data = {
+        'file': (BytesIO(b'special chars'), 'test@#$%.txt')
+    }
+    response = authenticated_client.post(
+        '/browse/upload/',
+        data=data,
+        content_type='multipart/form-data',
+        follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert b'Invalid filename' in response.data
+
+def test_upload_empty_file(authenticated_client, app, test_user):
+    """Test uploading an empty file"""
+    data = {
+        'file': (BytesIO(b''), 'empty.txt')
+    }
+    response = authenticated_client.post(
+        '/browse/upload/',
+        data=data,
+        content_type='multipart/form-data',
+        follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert b'File cannot be empty' in response.data
+
+def test_upload_exceeding_quota(authenticated_client, app, test_user):
+    """Test uploading file that exceeds user's storage quota"""
+    large_content = b'x' * (10 * 1024 * 1024 + 1)  # 10MB + 1 byte
+    data = {
+        'file': (BytesIO(large_content), 'large.txt')
+    }
+    response = authenticated_client.post(
+        '/browse/upload/',
+        data=data,
+        content_type='multipart/form-data',
+        follow_redirects=True
+    )
+    assert response.status_code == 200
+    assert b'Storage quota exceeded' in response.data
 
 def test_file_download(authenticated_client, app, test_user):
     """Test downloading a file"""

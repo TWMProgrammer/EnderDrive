@@ -111,21 +111,39 @@ def test_create_share_link(owner_client, app, test_users, test_file):
 
 
 def test_access_shared_file(client, app, test_users, test_file):
-    """Test accessing a shared file with the share link"""
-    # First create a share link
+    """Test accessing a shared file with edge cases"""
     with app.app_context():
+        # Test with expired share link
+        from datetime import datetime, timedelta
+        expired_share = SharedLink(
+            file_id=test_file.id,
+            created_by=test_users['owner_id'],
+            name='Expired Share',
+            expires_at=datetime.utcnow() - timedelta(days=1)
+        )
+        db = app.extensions['sqlalchemy']
+        db.session.add(expired_share)
+        db.session.commit()
+        
+        response = client.get(f'/shared/{expired_share.token}')
+        assert response.status_code == 404
+        assert b'Share link has expired' in response.data
+        
+        # Test with invalid token
+        response = client.get('/shared/invalid_token_123')
+        assert response.status_code == 404
+        assert b'Share link not found' in response.data
+        
+        # Test with valid share link
         share_link = SharedLink(
             file_id=test_file.id,
             created_by=test_users['owner_id'],
             name='Test Share'
         )
-        db = app.extensions['sqlalchemy']
         db.session.add(share_link)
         db.session.commit()
         
-        # Access the shared file with the token
         response = client.get(f'/shared/{share_link.token}')
-        
         assert response.status_code == 200
         assert b'shared_test.txt' in response.data
 
