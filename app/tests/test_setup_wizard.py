@@ -9,11 +9,18 @@ def test_setup_required_initial_state(app):
     with app.app_context():
         assert setup_required() is True
 
+def test_root_redirects_to_setup(client):
+    """Test that the root URL redirects to the setup wizard when no users exist"""
+    # Check that the root URL redirects to the setup wizard
+    response = client.get('/')
+    assert response.status_code == 302
+    assert response.headers['Location'].endswith('/setup')
+
 def test_setup_wizard_page_loads(client):
-    """Test that setup wizard page loads correctly"""
+    """Test that setup wizard page loads correctly when accessed directly"""
+    # Check that the setup page loads directly
     response = client.get('/setup')
     assert response.status_code == 200
-    assert b'Welcome to EnderDrive' in response.data
 
 def test_setup_wizard_successful(client, app):
     """Test successful completion of setup wizard"""

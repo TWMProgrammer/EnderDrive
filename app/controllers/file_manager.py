@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.file import File
 from app.models.folder import Folder
 from app.models.shared_link import SharedLink
+from app.utils.setup_wizard import setup_required
 from sqlalchemy import func
 import zipfile
 import tempfile
@@ -17,6 +18,10 @@ file_manager = Blueprint('file_manager', __name__)
 
 @file_manager.route('/')
 def index():
+    # Check if setup is required first
+    if setup_required():
+        return redirect(url_for('setup_wizard_setup'))
+    
     if 'user_id' in session:
         return redirect(url_for('file_manager.browse', path=''))
     return render_template('index.html')

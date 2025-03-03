@@ -15,6 +15,10 @@ def handle_setup(app):
     if not setup_required():
         # If setup is not required, redirect to login
         return redirect(url_for('auth.login'))
+    
+    # Always render the setup wizard template for GET requests
+    if request.method == 'GET':
+        return render_template('setup_wizard.html')
         
     if request.method == 'POST':
         try:
