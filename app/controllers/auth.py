@@ -51,7 +51,11 @@ def register():
         # Create new user
         hashed_password = generate_password_hash(password, method='pbkdf2')
         user_role = Role.query.filter_by(name='user').first()
-        new_user = User(username=username, password=hashed_password, role_id=user_role.id)
+        if not user_role:
+            user_role = Role(name='user', description='Regular user')
+            db.session.add(user_role)
+            db.session.commit()
+        new_user = User(username=username, password=hashed_password, role_id=user_role.id, storage_quota=5 * 1024 * 1024 * 1024)  # 5GB default quota
         
         try:
             db.session.add(new_user)

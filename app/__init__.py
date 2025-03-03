@@ -17,6 +17,7 @@ def create_app(config_class=Config):
     from app.controllers.file_manager import file_manager
     from app.controllers.sharing import sharing
     from app.controllers.favicon import favicon
+    from app.utils.setup_wizard import setup_required, handle_setup
 
     app.register_blueprint(auth)
     app.register_blueprint(admin)
@@ -31,10 +32,18 @@ def create_app(config_class=Config):
     with app.app_context():
         # Create all database tables
         db.create_all()
+        
+        # Check if setup is required
+        if setup_required():
+            # Pass the app parameter to handle_setup using a lambda function
+            # Use different endpoint names to avoid conflicts
+            app.add_url_rule('/', 'setup_wizard_root', lambda: handle_setup(app), methods=['GET', 'POST'])
+            app.add_url_rule('/setup', 'setup_wizard_setup', lambda: handle_setup(app), methods=['GET', 'POST'])
+            return app
 
         # Initialize roles and users only if they don't exist
-        with app.app_context():
-            initialize_roles_and_users(app)
+        # with app.app_context():
+        #     initialize_roles_and_users(app)
 
         # Synchronize database with filesystem
         from app.utils.filesystem import synchronize_database_with_filesystem

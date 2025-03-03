@@ -6,6 +6,19 @@ Just a very basic implementation of a Google-Drive or HFS-like application writt
 
 EnderDrive is a secure cloud storage solution that allows users to store, share, and access their files from anywhere with enterprise-grade security. It is designed to run on both Linux and Windows environments, providing a consistent experience across platforms.
 
+## First-Time Setup
+
+When you first run EnderDrive, you'll be guided through a setup wizard that helps you configure the system:
+
+1. Create an administrator account
+   - Choose a secure username and password
+   - The admin account has unlimited storage and full system access
+
+2. After setup is complete, you can:
+   - Log in with your admin credentials
+   - Create additional user accounts
+   - Configure system settings
+
 ## Key Features
 
 - **User Authentication & Authorization**
@@ -131,25 +144,6 @@ The application includes separate configurations for development and production 
 - Python 3.9 or higher
 - Dependencies listed in requirements.txt
 
-### Default User Accounts
-
-The system initializes with two default accounts:
-
-- Admin user:
-
-  - Username: `admin`
-  - Password: `twm420`
-  - Role: Administrator with full access
-  - Storage: Unlimited
-
-- Regular user:
-  - Username: `Louis`
-  - Password: `123`
-  - Role: Standard user
-  - Storage: 5GB quota
-
-**Note:** For security reasons, it's recommended to change these default passwords after initial setup.
-
 ### Running in Development Mode
 
 ```bash
@@ -192,9 +186,10 @@ app/
 │   └── user.py      # User account management
 ├── static/          # Static assets (CSS, JS)
 ├── templates/       # Jinja2 HTML templates
-└── utils/           # Utility functions and helpers
+└── utils/          # Utility functions and helpers
     ├── decorators.py # Access control decorators
-    └── filesystem.py # File system operations
+    ├── filesystem.py # File system operations
+    └── setup_wizard.py # First-time setup configuration
 ```
 
 ## Environment Variables

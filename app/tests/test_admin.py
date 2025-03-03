@@ -2,6 +2,7 @@ import pytest
 from app.models.user import User
 from app.models.role import Role
 from werkzeug.security import generate_password_hash
+from app import db
 
 
 @pytest.fixture
@@ -12,14 +13,12 @@ def admin_user(app):
         admin_role = Role.query.filter_by(name='admin').first()
         if not admin_role:
             admin_role = Role(name='admin', description='Administrator')
-            db = app.extensions['sqlalchemy']
             db.session.add(admin_role)
             db.session.commit()
         
         # Create admin user
         password = generate_password_hash('AdminPass123!', method='pbkdf2')
         admin = User(username='adminuser', password=password, role_id=admin_role.id)
-        db = app.extensions['sqlalchemy']
         db.session.add(admin)
         db.session.commit()
         return admin
@@ -49,13 +48,11 @@ def test_regular_user_cannot_access_admin(client, app):
         user_role = Role.query.filter_by(name='user').first()
         if not user_role:
             user_role = Role(name='user', description='Regular User')
-            db = app.extensions['sqlalchemy'].db
             db.session.add(user_role)
             db.session.commit()
             
         password = generate_password_hash('UserPass123!', method='pbkdf2')
         user = User(username='regularuser', password=password, role_id=user_role.id)
-        db = app.extensions['sqlalchemy']
         db.session.add(user)
         db.session.commit()
     
@@ -77,9 +74,12 @@ def test_user_management(admin_client, app):
     # Create a test user to manage
     with app.app_context():
         user_role = Role.query.filter_by(name='user').first()
+        if not user_role:
+            user_role = Role(name='user', description='Regular User')
+            db.session.add(user_role)
+            db.session.commit()
         password = generate_password_hash('ManagedPass123!', method='pbkdf2')
         test_user = User(username='testmanaged', password=password, role_id=user_role.id)
-        db = app.extensions['sqlalchemy']
         db.session.add(test_user)
         db.session.commit()
         user_id = test_user.id
@@ -98,6 +98,14 @@ def test_user_management(admin_client, app):
 
 def test_add_user(admin_client, app):
     """Test adding a new user as admin"""
+    # Ensure user role exists
+    with app.app_context():
+        user_role = Role.query.filter_by(name='user').first()
+        if not user_role:
+            user_role = Role(name='user', description='Regular User')
+            db.session.add(user_role)
+            db.session.commit()
+    
     # Test adding a new user
     response = admin_client.post('/admin/add_user', data={
         'username': 'newuser',
@@ -123,9 +131,12 @@ def test_edit_user(admin_client, app):
     # First create a user to edit
     with app.app_context():
         user_role = Role.query.filter_by(name='user').first()
+        if not user_role:
+            user_role = Role(name='user', description='Regular User')
+            db.session.add(user_role)
+            db.session.commit()
         password = generate_password_hash('EditUserPass123!', method='pbkdf2')
         test_user = User(username='edituser', password=password, role_id=user_role.id, storage_quota=1024*1024*1024)
-        db = app.extensions['sqlalchemy']
         db.session.add(test_user)
         db.session.commit()
         user_id = test_user.id
@@ -155,9 +166,12 @@ def test_delete_user(admin_client, app):
     # First create a user to delete
     with app.app_context():
         user_role = Role.query.filter_by(name='user').first()
+        if not user_role:
+            user_role = Role(name='user', description='Regular User')
+            db.session.add(user_role)
+            db.session.commit()
         password = generate_password_hash('DeleteUserPass123!', method='pbkdf2')
         test_user = User(username='deleteuser', password=password, role_id=user_role.id)
-        db = app.extensions['sqlalchemy']
         db.session.add(test_user)
         db.session.commit()
         user_id = test_user.id
