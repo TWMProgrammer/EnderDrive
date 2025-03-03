@@ -3,6 +3,7 @@ from app.models.user import User
 from app.models.role import Role
 from app.utils.setup_wizard import setup_required
 import os
+from app import db
 
 def test_setup_required_initial_state(app):
     """Test that setup is required when no users exist"""
@@ -84,7 +85,6 @@ def test_setup_wizard_existing_user(client, app):
         user = User(username='existinguser', 
                    password=generate_password_hash('password'),
                    role_id=admin_role.id)
-        from app import db
         db.session.add(user)
         db.session.commit()
     
